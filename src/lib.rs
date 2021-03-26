@@ -338,10 +338,6 @@ impl Sim {
 			XcmSink::<relay::XcmConfig>::process_upward_message(from.into(), msg);
 		});
 
-		// EXT_RELAY.with(|v| v.borrow_mut().execute_with(|| {
-		// 	XcmSink::<relay::XcmConfig>::process_upward_message(from.into(), msg);
-		// }));
-
 		Ok(())
 	}
 
@@ -422,7 +418,9 @@ mod tests {
 			);
 			println!("-------- sending to relay chain: {:?}", sending_result);
 
-			para_a::System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
+			para_a::System::events()
+				.iter()
+				.for_each(|r| println!(">>> {:?}", r.event));
 		});
 
 		Sim::execute_with_in_relay_chain(|| {
