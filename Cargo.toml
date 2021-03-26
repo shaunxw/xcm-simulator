@@ -17,6 +17,7 @@ sp-core = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1
 
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 
 cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
 cumulus-pallet-parachain-system = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
@@ -28,3 +29,4 @@ xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "rococo
 xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+runtime-parachains = { package = "polkadot-runtime-parachains", git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
