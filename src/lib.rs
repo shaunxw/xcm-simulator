@@ -1,3 +1,5 @@
+use paste::paste;
+
 use frame_support::{parameter_types, traits::Get};
 use frame_system::EnsureRoot;
 use sp_core::H256;
@@ -325,7 +327,7 @@ impl Sim {
 		}
 	}
 
-	pub fn execute_with_in_relay_chain<R>(execute: impl FnOnce() -> R) -> R {
+	pub fn relay_chain_execute_with<R>(execute: impl FnOnce() -> R) -> R {
 		EXT_RELAY.with(|v| v.borrow_mut().execute_with(execute))
 	}
 
@@ -334,7 +336,7 @@ impl Sim {
 
 		println!("Sim ump sent: from {:?}, msg {:?}", from, msg);
 
-		Self::execute_with_in_relay_chain(|| {
+		Self::relay_chain_execute_with(|| {
 			XcmSink::<relay::XcmConfig>::process_upward_message(from.into(), msg);
 		});
 
@@ -423,10 +425,133 @@ mod tests {
 				.for_each(|r| println!(">>> {:?}", r.event));
 		});
 
-		Sim::execute_with_in_relay_chain(|| {
+		Sim::relay_chain_execute_with(|| {
 			relay::System::events()
 				.iter()
 				.for_each(|r| println!(">>> {:?}", r.event));
 		});
+	}
+}
+
+pub trait TestExt {
+	fn new_ext() -> sp_io::TestExternalities;
+	fn execute_with<R>(execute: impl FnOnce() -> R) -> R;
+}
+
+pub trait UmpMsgHandler {
+	fn handle_ump_msg(from: u32, msg: Vec<u8>) -> Result<(), ()>;
+}
+
+pub trait HrmpMsgHandler {
+	fn handle_hrmp_msg(from: u32, msg: Vec<u8>) -> Result<(), ()>;
+}
+
+pub trait GetParaId {
+	fn para_id() -> u32;
+}
+
+#[macro_export]
+macro_rules! decl_test_chain {
+	// entry point
+	(
+		pub struct $name:ident {
+			new_ext = $new_ext:expr,
+			$( para_id = $para_id:expr, )?
+		}
+	) => {
+		paste! {
+			crate::decl_test_chain!(@impl
+				pub struct $name {
+					new_ext = $new_ext,
+					ext_name = [<EXT_ $name:upper>],
+					$( para_id = $para_id, )?
+				}
+			);
+		}
+	};
+
+	// branch - impl relay chain
+	(@impl
+		pub struct $name:ident {
+			new_ext = $new_ext:expr,
+			ext_name = $ext_name:ident,
+		}
+	) => {
+		crate::decl_test_chain!(@impl_test_ext $ext_name; $new_ext;);
+
+		crate::decl_test_chain!(@impl_struct $name;);
+
+		crate::decl_test_chain!(@impl_test_ext $name; $ext_name; $new_ext; );
+	};
+
+	// branch - impl parachain
+	(@impl
+		pub struct $name:ident {
+			new_ext = $new_ext:expr,
+			ext_name = $ext_name:ident,
+			para_id = $para_id:expr,
+		}
+	) => {
+		crate::decl_test_chain!(@impl_test_ext $ext_name; $new_ext;);
+
+		crate::decl_test_chain!(@impl_struct $name;);
+		crate::decl_test_chain!(@impl_get_para_id $name; $para_id;);
+
+		crate::decl_test_chain!(@impl_test_ext $name; $ext_name; $new_ext; );
+	};
+
+	(@impl_test_ext
+		$ext_name:ident;
+		$new_ext:expr;
+	) => {
+		thread_local! {
+			pub static $ext_name: RefCell<TestExternalities> = RefCell::new($new_ext);
+		}
+	};
+
+	(@impl_struct
+		$name:ident;
+	) => {
+		pub struct $name;
+	};
+
+	(@impl_get_para_id
+		$name:ident;
+		$para_id:expr;
+	) => {
+		impl GetParaId for $name {
+			fn para_id() -> u32 {
+				$para_id
+			}
+		}
+	};
+
+	(@impl_test_ext
+		$name:ident;
+		$ext_name:ident;
+		$new_ext:expr;
+	) => {
+		impl TestExt for $name {
+			fn new_ext() -> sp_io::TestExternalities {
+				$new_ext
+			}
+
+			fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
+				$ext_name.with(|v| v.borrow_mut().execute_with(execute))
+			}
+		}
+	};
+}
+
+decl_test_chain! {
+	pub struct MockAcala {
+		new_ext = parachain_ext::<para_a::Runtime>(111),
+		para_id = 1,
+	}
+}
+
+decl_test_chain! {
+	pub struct MockRelay {
+		new_ext = relay::ext(),
 	}
 }
