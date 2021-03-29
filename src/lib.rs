@@ -107,7 +107,7 @@ decl_test_parachain! {
 }
 
 #[macro_export]
-macro_rules! decl_sim_network {
+macro_rules! decl_test_network {
 	(
 		pub struct $name:ident {
 			relay_chain = default,
@@ -137,8 +137,8 @@ macro_rules! decl_sim_network {
 	};
 }
 
-decl_sim_network! {
-	pub struct SimNetwork {
+decl_test_network! {
+	pub struct TestNetwork {
 		relay_chain = default,
 		parachains = vec![(111, MockAcala),],
 	}

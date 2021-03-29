@@ -84,7 +84,6 @@ pub mod para_default {
         type XcmSender = XcmHandler;
         type AssetTransactor = ();
         type OriginConverter = LocalOriginConverter;
-        //TODO: might need to add other assets based on orml-tokens
         type IsReserve = NativeAsset;
         type IsTeleporter = ();
         type LocationInverter = LocationInverter<Ancestry>;
@@ -93,14 +92,14 @@ pub mod para_default {
     pub struct MockMessenger;
     impl UpwardMessageSender for MockMessenger {
         fn send_upward_message(msg: UpwardMessage) -> Result<(), ()> {
-            crate::SimNetwork::send_ump_msg(ParachainInfo::parachain_id().into(), msg)
+            crate::TestNetwork::send_ump_msg(ParachainInfo::parachain_id().into(), msg)
         }
     }
 
     impl HrmpMessageSender for MockMessenger {
         fn send_hrmp_message(msg: OutboundHrmpMessage) -> Result<(), ()> {
             let OutboundHrmpMessage { recipient, data } = msg;
-            crate::SimNetwork::send_hrmp_msg(ParachainInfo::parachain_id().into(), recipient.into(), data)
+            crate::TestNetwork::send_hrmp_msg(ParachainInfo::parachain_id().into(), recipient.into(), data)
         }
     }
 
