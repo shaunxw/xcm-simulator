@@ -1,0 +1,21 @@
+[package]
+name = "tests"
+version = "0.1.0"
+authors = ["Shaun Wang <spxwang@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "2.0.0", features = ["derive"] }
+serde = { version = "1.0.101", features = ["derive"] }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+parachain-info = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
+cumulus-pallet-xcm-handler = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
+
+# [dev-dependencies]
+xcm = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+orml-nft = { git = "https://github.com/open-web3-stack/open-runtime-module-library", branch = "master" }
+xcm-simulator = { path = "../" }

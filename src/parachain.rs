@@ -1,7 +1,7 @@
 use sp_io::TestExternalities;
 
 #[macro_export]
-macro_rules! construct_parachain_runtime {
+macro_rules! __construct_parachain_runtime {
     // entry point with default xcm config
     (
         pub mod $para:ident {
@@ -15,40 +15,42 @@ macro_rules! construct_parachain_runtime {
             },
         }
     ) => {
-        $crate::construct_parachain_runtime! {
+        $crate::__construct_parachain_runtime! {
             pub mod $para {
                 test_network = $test_network,
                 xcm_config = {
-                    parameter_types! {
-                        pub Network: NetworkId = NetworkId::Any;
-                        pub RelayChainOrigin: Origin = cumulus_pallet_xcm_handler::Origin::Relay.into();
-                        pub Ancestry: MultiLocation = MultiLocation::X1(Junction::Parachain {
-                            id: ParachainInfo::get().into(),
-                        });
+                    $crate::frame_support::parameter_types! {
+                        pub Network: $crate::xcm::v0::NetworkId = $crate::xcm::v0::NetworkId::Any;
+                        pub RelayChainOrigin: Origin = Into::<Origin>::into($crate::cumulus_pallet_xcm_handler::Origin::Relay);
+                        pub Ancestry: $crate::xcm::v0::MultiLocation = $crate::xcm::v0::MultiLocation::X1(
+                            $crate::xcm::v0::Junction::Parachain {
+                                id: <ParachainInfo as $crate::frame_support::traits::Get<_>>::get().into(),
+                            }
+                        );
                     }
 
                     pub type LocationConverter = (
-                        ParentIsDefault<AccountId>,
-                        SiblingParachainConvertsVia<Sibling, AccountId>,
-                        AccountId32Aliases<Network, AccountId>,
+                        $crate::xcm_builder::ParentIsDefault<AccountId>,
+                        $crate::xcm_builder::SiblingParachainConvertsVia<$crate::polkadot_parachain::primitives::Sibling, AccountId>,
+                        $crate::xcm_builder::AccountId32Aliases<Network, AccountId>,
                     );
 
                     pub type LocalOriginConverter = (
-                        SovereignSignedViaLocation<LocationConverter, Origin>,
-                        RelayChainAsNative<RelayChainOrigin, Origin>,
-                        SiblingParachainAsNative<cumulus_pallet_xcm_handler::Origin, Origin>,
-                        SignedAccountId32AsNative<Network, Origin>,
+                        $crate::xcm_builder::SovereignSignedViaLocation<LocationConverter, Origin>,
+                        $crate::xcm_builder::RelayChainAsNative<RelayChainOrigin, Origin>,
+                        $crate::xcm_builder::SiblingParachainAsNative<$crate::cumulus_pallet_xcm_handler::Origin, Origin>,
+                        $crate::xcm_builder::SignedAccountId32AsNative<Network, Origin>,
                     );
 
                     pub struct XcmConfig;
-                    impl Config for XcmConfig {
+                    impl $crate::xcm_executor::Config for XcmConfig {
                         type Call = Call;
                         type XcmSender = XcmHandler;
                         type AssetTransactor = ();
                         type OriginConverter = LocalOriginConverter;
-                        type IsReserve = NativeAsset;
+                        type IsReserve = $crate::xcm_executor::traits::NativeAsset;
                         type IsTeleporter = ();
-                        type LocationInverter = LocationInverter<Ancestry>;
+                        type LocationInverter = $crate::xcm_builder::LocationInverter<Ancestry>;
                     }
                 },
                 extra_config = {
@@ -73,42 +75,22 @@ macro_rules! construct_parachain_runtime {
         pub mod $para {
             use $crate::traits::XcmRelay;
 
-            use frame_support::{parameter_types, traits::Get};
-            use frame_system::EnsureRoot;
-            use sp_core::H256;
-            use sp_runtime::{testing::Header, traits::IdentityLookup, AccountId32};
-
-            use polkadot_parachain::primitives::{Sibling, UpwardMessage};
-            use xcm::v0::{Junction, MultiLocation, NetworkId};
-            use xcm_builder::{
-                AccountId32Aliases, LocationInverter, ParentIsDefault, RelayChainAsNative,
-                SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative, SovereignSignedViaLocation,
-            };
-            use xcm_executor::{
-                traits::{NativeAsset},
-                Config, XcmExecutor,
-            };
-
-            use cumulus_primitives_core::{
-                HrmpMessageSender, OutboundHrmpMessage, UpwardMessageSender,
-            };
-
-            parameter_types! {
+            $crate::frame_support::parameter_types! {
                 pub const BlockHashCount: u64 = 250;
             }
 
-            pub type AccountId = AccountId32;
+            pub type AccountId = $crate::sp_runtime::AccountId32;
 
-            impl frame_system::Config for Runtime {
+            impl $crate::frame_system::Config for Runtime {
                 type Origin = Origin;
                 type Call = Call;
                 type Index = u64;
                 type BlockNumber = u64;
-                type Hash = H256;
-                type Hashing = ::sp_runtime::traits::BlakeTwo256;
+                type Hash = $crate::sp_core::H256;
+                type Hashing = $crate::sp_runtime::traits::BlakeTwo256;
                 type AccountId = AccountId;
-                type Lookup = IdentityLookup<Self::AccountId>;
-                type Header = Header;
+                type Lookup = $crate::sp_runtime::traits::IdentityLookup<Self::AccountId>;
+                type Header = $crate::sp_runtime::testing::Header;
                 type Event = Event;
                 type BlockHashCount = BlockHashCount;
                 type BlockWeights = ();
@@ -124,44 +106,46 @@ macro_rules! construct_parachain_runtime {
                 type SS58Prefix = ();
             }
 
-            impl parachain_info::Config for Runtime {}
+            impl $crate::parachain_info::Config for Runtime {}
 
             pub struct MockMessenger;
-            impl UpwardMessageSender for MockMessenger {
-                fn send_upward_message(msg: UpwardMessage) -> Result<(), ()> {
+            impl $crate::cumulus_primitives_core::UpwardMessageSender for MockMessenger {
+                fn send_upward_message(msg: $crate::polkadot_parachain::primitives::UpwardMessage) -> Result<(), ()> {
                     <$test_network>::send_ump_msg(ParachainInfo::parachain_id().into(), msg)
                 }
             }
 
-            impl HrmpMessageSender for MockMessenger {
-                fn send_hrmp_message(msg: OutboundHrmpMessage) -> Result<(), ()> {
-                    let OutboundHrmpMessage { recipient, data } = msg;
+            impl $crate::cumulus_primitives_core::HrmpMessageSender for MockMessenger {
+                fn send_hrmp_message(msg: $crate::cumulus_primitives_core::OutboundHrmpMessage) -> Result<(), ()> {
+                    let $crate::cumulus_primitives_core::OutboundHrmpMessage { recipient, data } = msg;
                     <$test_network>::send_hrmp_msg(ParachainInfo::parachain_id().into(), recipient.into(), data)
                 }
             }
 
             $( $xcm_config )*
 
-            impl cumulus_pallet_xcm_handler::Config for Runtime {
+            impl $crate::cumulus_pallet_xcm_handler::Config for Runtime {
                 type Event = Event;
-                type XcmExecutor = XcmExecutor<XcmConfig>;
+                type XcmExecutor = $crate::xcm_executor::XcmExecutor<XcmConfig>;
                 type UpwardMessageSender = MockMessenger;
                 type HrmpMessageSender = MockMessenger;
-                type SendXcmOrigin = EnsureRoot<AccountId>;
+                type SendXcmOrigin = $crate::frame_system::EnsureRoot<AccountId>;
                 type AccountIdConverter = LocationConverter;
             }
 
             $( $extra_config )*
 
-            type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
-            type Block = frame_system::mocking::MockBlock<Runtime>;
+            type UncheckedExtrinsic = $crate::frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
+            type Block = $crate::frame_system::mocking::MockBlock<Runtime>;
 
-            frame_support::construct_runtime!(
+            $crate::frame_support::construct_runtime!(
                 pub enum Runtime where
                     Block = Block,
                     NodeBlock = Block,
                     UncheckedExtrinsic = UncheckedExtrinsic,
                 {
+                    //TODO: Use `$crate::frame_system` etc once `construct_runtime!` supports path.
+                    // https://github.com/paritytech/substrate/issues/8085
                     System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
                     ParachainInfo: parachain_info::{Pallet, Storage, Config},
                     XcmHandler: cumulus_pallet_xcm_handler::{Pallet, Call, Event<T>, Origin},
