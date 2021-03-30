@@ -1,5 +1,5 @@
 [package]
-name = "tests"
+name = "xcm-simulator-example"
 version = "0.1.0"
 authors = ["Shaun Wang <spxwang@gmail.com>"]
 edition = "2018"
@@ -18,4 +18,4 @@ cumulus-pallet-xcm-handler = { git = "https://github.com/paritytech/cumulus", br
 # [dev-dependencies]
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 orml-nft = { git = "https://github.com/open-web3-stack/open-runtime-module-library", branch = "master" }
-xcm-simulator = { path = "../" }
+xcm-simulator = { path = "../xcm-simulator" }

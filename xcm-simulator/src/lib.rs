@@ -3,15 +3,15 @@ pub use paste;
 pub use frame_support;
 pub use frame_system;
 pub use sp_core;
-pub use sp_runtime;
 pub use sp_io;
+pub use sp_runtime;
 pub use sp_std;
 
-pub use cumulus_primitives_core;
-pub use runtime_parachains;
-pub use polkadot_parachain;
-pub use parachain_info;
 pub use cumulus_pallet_xcm_handler;
+pub use cumulus_primitives_core;
+pub use parachain_info;
+pub use polkadot_parachain;
+pub use runtime_parachains;
 pub use xcm;
 pub use xcm_builder;
 pub use xcm_executor;
@@ -23,9 +23,9 @@ pub mod traits;
 pub use traits::*;
 
 pub mod prelude {
-	pub use crate::traits::*;
 	pub use crate::parachain;
 	pub use crate::relay_chain;
+	pub use crate::traits::*;
 }
 
 #[macro_export]
@@ -41,8 +41,8 @@ macro_rules! __decl_test_relay_chain {
 
 		impl $crate::traits::UmpMsgHandler for $name {
 			fn handle_ump_msg(from: u32, msg: Vec<u8>) -> Result<(), ()> {
-				use $crate::runtime_parachains::ump::UmpSink;
 				use $crate::relay_chain::default;
+				use $crate::runtime_parachains::ump::UmpSink;
 
 				println!("Ump sent: from {:?}, msg {:?}", from, msg);
 

@@ -1,56 +1,54 @@
 fn main() {}
 
-use xcm_simulator::{prelude::*, decl_test_parachain, decl_test_network};
-use xcm::v0::{Junction, OriginKind, SendXcm, Xcm};
-
-decl_test_parachain! {
-	pub struct MockAcala {
-		new_ext = parachain::default_ext::<mock_acala::Runtime>(1),
-		para_id = 1,
-	}
-	pub mod mock_acala {
-		test_network = super::TestNetwork,
-		xcm_config = { default },
-		extra_config = {
-			impl orml_nft::Config for Runtime {
-				type ClassId = u64;
-				type TokenId = u64;
-				type ClassData = ();
-				type TokenData = ();
-			}
-		},
-		extra_modules = {
-			NFT: orml_nft::{Pallet, Storage, Config<T>},
-		},
-	}
-}
-
-decl_test_parachain! {
-	pub struct MockLaminar {
-		new_ext = parachain::default_ext::<mock_laminar::Runtime>(2),
-		para_id = 2,
-	}
-	pub mod mock_laminar {
-		test_network = super::TestNetwork,
-		xcm_config = { default },
-		extra_config = {},
-		extra_modules = {},
-	}
-}
-
-decl_test_network! {
-	pub struct TestNetwork {
-		relay_chain = default,
-		parachains = vec![
-			(1, MockAcala),
-			(2, MockLaminar),
-		],
-	}
-}
-
 #[cfg(test)]
 mod tests {
-	use super::*;
+	use xcm::v0::{Junction, OriginKind, SendXcm, Xcm};
+	use xcm_simulator::{decl_test_network, decl_test_parachain, prelude::*};
+
+	decl_test_parachain! {
+		pub struct MockAcala {
+			new_ext = parachain::default_ext::<mock_acala::Runtime>(1),
+			para_id = 1,
+		}
+		pub mod mock_acala {
+			test_network = super::TestNetwork,
+			xcm_config = { default },
+			extra_config = {
+				impl orml_nft::Config for Runtime {
+					type ClassId = u64;
+					type TokenId = u64;
+					type ClassData = ();
+					type TokenData = ();
+				}
+			},
+			extra_modules = {
+				NFT: orml_nft::{Pallet, Storage, Config<T>},
+			},
+		}
+	}
+
+	decl_test_parachain! {
+		pub struct MockLaminar {
+			new_ext = parachain::default_ext::<mock_laminar::Runtime>(2),
+			para_id = 2,
+		}
+		pub mod mock_laminar {
+			test_network = super::TestNetwork,
+			xcm_config = { default },
+			extra_config = {},
+			extra_modules = {},
+		}
+	}
+
+	decl_test_network! {
+		pub struct TestNetwork {
+			relay_chain = default,
+			parachains = vec![
+				(1, MockAcala),
+				(2, MockLaminar),
+			],
+		}
+	}
 
 	#[test]
 	fn try_hrmp() {

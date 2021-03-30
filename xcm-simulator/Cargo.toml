@@ -1,0 +1,33 @@
+[package]
+name = "xcm-simulator"
+description = "Cross-chain token transfer."
+license = "Apache-2.0"
+version = "0.0.1-alpha"
+authors = ["Shaun Wang <spxwang@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+serde = { version = "1.0.124" }
+codec = { package = "parity-scale-codec", version = "2.0.0" }
+paste = "1.0.5"
+
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+
+cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
+cumulus-pallet-parachain-system = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
+parachain-info = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
+cumulus-pallet-xcm-handler = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
+
+xcm = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+runtime-parachains = { package = "polkadot-runtime-parachains", git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
