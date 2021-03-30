@@ -10,10 +10,11 @@ use xcm_builder::{
 };
 use xcm_executor::traits::IsConcrete;
 
-pub mod relay_default {
+pub mod default {
 	use super::*;
 
 	use runtime_parachains::origin as parachains_origin;
+	use runtime_parachains::ump as parachains_ump;
 
 	parameter_types! {
 		pub const BlockHashCount: u64 = 250;
@@ -104,6 +105,8 @@ pub mod relay_default {
 	}
 
 	impl parachains_origin::Config for Runtime {}
+
+	pub type UmpSink = parachains_ump::XcmSink<XcmConfig>;
 
 	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 	type Block = frame_system::mocking::MockBlock<Runtime>;

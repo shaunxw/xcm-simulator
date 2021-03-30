@@ -1,5 +1,6 @@
 pub trait TestExt {
 	fn new_ext() -> sp_io::TestExternalities;
+	fn reset_ext();
 	fn execute_with<R>(execute: impl FnOnce() -> R) -> R;
 }
 
@@ -12,8 +13,8 @@ pub trait HrmpMsgHandler {
 }
 
 pub trait XcmRelay {
-    fn send_ump_msg(from: u32, msg: Vec<u8>) -> Result<(), ()>;
-    fn send_hrmp_msg(from: u32, to: u32, msg: Vec<u8>) -> Result<(), ()>;
+	fn send_ump_msg(from: u32, msg: Vec<u8>) -> Result<(), ()>;
+	fn send_hrmp_msg(from: u32, to: u32, msg: Vec<u8>) -> Result<(), ()>;
 }
 
 pub trait GetParaId {

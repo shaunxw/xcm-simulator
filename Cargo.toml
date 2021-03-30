@@ -3,7 +3,7 @@ name = "xcm-simulator"
 description = "Cross-chain token transfer."
 license = "Apache-2.0"
 version = "0.0.1-alpha"
-authors = ["Shaun Wang"]
+authors = ["Shaun Wang <spxwang@gmail.com>"]
 edition = "2018"
 
 [dependencies]
@@ -31,3 +31,6 @@ xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "rococ
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 runtime-parachains = { package = "polkadot-runtime-parachains", git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
+
+[dev-dependencies]
+orml-nft = { git = "https://github.com/open-web3-stack/open-runtime-module-library", branch = "master" }
