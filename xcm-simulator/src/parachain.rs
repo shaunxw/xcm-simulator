@@ -104,21 +104,37 @@ macro_rules! __construct_parachain_runtime {
 				type BaseCallFilter = ();
 				type SystemWeightInfo = ();
 				type SS58Prefix = ();
+				type OnSetCode = ();
 			}
 
 			impl $crate::parachain_info::Config for Runtime {}
 
 			pub struct MockMessenger;
 			impl $crate::cumulus_primitives_core::UpwardMessageSender for MockMessenger {
-				fn send_upward_message(msg: $crate::polkadot_parachain::primitives::UpwardMessage) -> Result<(), ()> {
-					<$test_network>::send_ump_msg(ParachainInfo::parachain_id().into(), msg)
+				fn send_upward_message(
+					msg: $crate::polkadot_parachain::primitives::UpwardMessage
+				) -> Result<u32, $crate::cumulus_primitives_core::MessageSendError> {
+					let _ = <$test_network>::send_ump_msg(ParachainInfo::parachain_id().into(), msg);
+					Ok(0)
 				}
 			}
 
-			impl $crate::cumulus_primitives_core::HrmpMessageSender for MockMessenger {
-				fn send_hrmp_message(msg: $crate::cumulus_primitives_core::OutboundHrmpMessage) -> Result<(), ()> {
-					let $crate::cumulus_primitives_core::OutboundHrmpMessage { recipient, data } = msg;
-					<$test_network>::send_hrmp_msg(ParachainInfo::parachain_id().into(), recipient.into(), data)
+			impl $crate::cumulus_primitives_core::XcmpMessageSender for MockMessenger {
+				fn send_xcm_message(
+					dest: $crate::cumulus_primitives_core::ParaId,
+					msg: xcm::VersionedXcm,
+					qos: $crate::cumulus_primitives_core::ServiceQuality
+				) -> Result<u32, $crate::cumulus_primitives_core::MessageSendError> {
+					let _ = <$test_network>::send_hrmp_msg(ParachainInfo::parachain_id().into(), dest.into(), msg);
+					Ok(0)
+				}
+
+				fn send_blob_message(
+					dest: $crate::cumulus_primitives_core::ParaId,
+					msg: Vec<u8>,
+					qos: $crate::cumulus_primitives_core::ServiceQuality
+				) -> Result<u32, $crate::cumulus_primitives_core::MessageSendError> {
+					Ok(0)
 				}
 			}
 
@@ -128,7 +144,7 @@ macro_rules! __construct_parachain_runtime {
 				type Event = Event;
 				type XcmExecutor = $crate::xcm_executor::XcmExecutor<XcmConfig>;
 				type UpwardMessageSender = MockMessenger;
-				type HrmpMessageSender = MockMessenger;
+				type XcmpMessageSender = MockMessenger;
 				type SendXcmOrigin = $crate::frame_system::EnsureRoot<AccountId>;
 				type AccountIdConverter = LocationConverter;
 			}

@@ -45,6 +45,7 @@ pub mod default {
 		type BaseCallFilter = ();
 		type SystemWeightInfo = ();
 		type SS58Prefix = ();
+		type OnSetCode = ();
 	}
 
 	pub type Balance = u128;

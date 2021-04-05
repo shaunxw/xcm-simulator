@@ -81,15 +81,12 @@ macro_rules! decl_test_parachain {
 		}
 
 		impl $crate::HrmpMsgHandler for $name {
-			fn handle_hrmp_msg(from: u32, msg: Vec<u8>) -> Result<(), ()> {
-				use $crate::cumulus_primitives_core::{HrmpMessageHandler, InboundHrmpMessage};
+			fn handle_hrmp_msg(from: u32, msg: $crate::xcm::VersionedXcm) -> Result<(), ()> {
+				use $crate::cumulus_primitives_core::{XcmpMessageHandler, InboundHrmpMessage};
 
 				$name::execute_with(|| {
 					//TODO: `sent_at` - check with runtime
-					$para_mod::XcmHandler::handle_hrmp_message(
-						from.into(),
-						InboundHrmpMessage { sent_at: 1, data: msg }
-					);
+					$para_mod::XcmHandler::handle_xcm_message(from.into(), 1, msg);
 				});
 				Ok(())
 			}
@@ -165,7 +162,7 @@ macro_rules! decl_test_network {
 				MockRelay::handle_ump_msg(from, msg)
 			}
 
-			fn send_hrmp_msg(from: u32, to: u32, msg: Vec<u8>) -> Result<(), ()> {
+			fn send_hrmp_msg(from: u32, to: u32, msg: $crate::xcm::VersionedXcm) -> Result<(), ()> {
 				match to {
 					$( $para_id => <$parachain>::handle_hrmp_msg(from, msg), )*
 					_ => Err(()),
