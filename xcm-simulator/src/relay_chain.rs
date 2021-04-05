@@ -8,6 +8,8 @@ macro_rules! __construct_relay_chain_runtime {
 		pub mod $relay {
 			use super::*;
 
+			use $crate::traits::XcmRelay;
+
 			$crate::frame_support::parameter_types! {
 				pub const BlockHashCount: u64 = 250;
 			}
@@ -85,6 +87,19 @@ macro_rules! __construct_relay_chain_runtime {
 				$crate::xcm_builder::SignedAccountId32AsNative<RococoNetwork, Origin>,
 				$crate::xcm_builder::ChildSystemParachainAsSuperuser<$crate::cumulus_primitives_core::ParaId, Origin>,
 			);
+
+			pub struct XcmSender;
+			impl $crate::xcm::v0::SendXcm for XcmSender {
+				fn send_xcm(dest: $crate::xcm::v0::MultiLocation, msg: $crate::xcm::v0::Xcm) -> $crate::xcm::v0::Result {
+					use $crate::xcm::v0::{MultiLocation::*, Junction::*, Error};
+
+					if let X2(Parent, Parachain { id }) = dest {
+						<$test_network>::send_dmp_msg(id, msg)
+					} else {
+						Err(Error::CannotReachDestination)
+					}
+				}
+			}
 
 			pub struct XcmConfig;
 			impl $crate::xcm_executor::Config for XcmConfig {

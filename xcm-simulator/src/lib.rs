@@ -1,4 +1,5 @@
 pub use paste;
+pub use codec;
 
 pub use frame_support;
 pub use frame_system;
@@ -101,6 +102,23 @@ macro_rules! decl_test_parachain {
 			}
 		}
 
+		impl $crate::DmpMsgHandler for $name {
+			fn handle_dmp_msg(msg: $crate::xcm::v0::Xcm) -> $crate::xcm::v0::Result {
+				use $crate::cumulus_primitives_core::{DownwardMessageHandler, InboundDownwardMessage};
+				use $crate::codec::Encode;
+
+				$name::execute_with(|| {
+					//TODO: `sent_at` - check with runtime
+					let dmp_msg = InboundDownwardMessage {
+						sent_at: 1,
+						msg: $crate::xcm::VersionedXcm::from(msg).encode(),
+					};
+					$para_mod::XcmHandler::handle_downward_message(dmp_msg);
+				});
+				Ok(())
+			}
+		}
+
 		$crate::__construct_parachain_runtime! {
 			pub mod $para_mod {
 				test_network = $test_network,
@@ -178,6 +196,13 @@ macro_rules! decl_test_network {
 				match to {
 					$( $para_id => <$parachain>::handle_hrmp_msg(from, msg), )*
 					_ => Err(()),
+				}
+			}
+
+			fn send_dmp_msg(to: u32, msg: $crate::xcm::v0::Xcm) -> $crate::xcm::v0::Result {
+				match to {
+					$( $para_id => <$parachain>::handle_dmp_msg(msg), )*
+					_ => Err($crate::xcm::v0::Error::CannotReachDestination),
 				}
 			}
 		}

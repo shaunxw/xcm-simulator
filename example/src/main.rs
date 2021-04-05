@@ -1,7 +1,7 @@
 fn main() {}
 
-// #[cfg(test)]
-// mod tests {
+#[cfg(test)]
+mod tests {
 	use xcm::v0::{Junction, OriginKind, SendXcm, Xcm};
 	use xcm_simulator::{decl_test_network, decl_test_parachain, prelude::*};
 
@@ -136,4 +136,4 @@ fn main() {}
 			});
 		});
 	}
-// }
+}
