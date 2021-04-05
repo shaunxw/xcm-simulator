@@ -136,4 +136,28 @@ mod tests {
 			});
 		});
 	}
+
+	#[test]
+	fn try_dmp() {
+		TestNetwork::reset();
+
+		MockRelay::execute_with(|| {
+			relay::XcmSender::send_xcm(Junction::Parachain { id: 1 }.into(), Xcm::Transact {
+				origin_type: OriginKind::Native,
+				call: vec![1],
+			});
+
+			println!(">>> Relay chain events:");
+			relay::System::events().iter().for_each(|r| {
+				println!("{:?}", r.event);
+			});
+		});
+
+		MockAcala::execute_with(|| {
+			println!(">>> Acala events:");
+			mock_acala::System::events().iter().for_each(|r| {
+				println!("{:?}", r.event);
+			});
+		});
+	}
 }

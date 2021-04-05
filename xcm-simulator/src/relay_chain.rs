@@ -93,7 +93,7 @@ macro_rules! __construct_relay_chain_runtime {
 				fn send_xcm(dest: $crate::xcm::v0::MultiLocation, msg: $crate::xcm::v0::Xcm) -> $crate::xcm::v0::Result {
 					use $crate::xcm::v0::{MultiLocation::*, Junction::*, Error};
 
-					if let X2(Parent, Parachain { id }) = dest {
+					if let X1(Parachain { id }) = dest {
 						<$test_network>::send_dmp_msg(id, msg)
 					} else {
 						Err(Error::CannotReachDestination)
