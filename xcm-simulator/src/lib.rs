@@ -145,7 +145,7 @@ macro_rules! decl_test_network {
 		pub struct $name;
 
 		impl $name {
-			fn reset() {
+			pub fn reset() {
 				MockRelay::reset_ext();
 				$( <$parachain>::reset_ext(); )*
 			}
