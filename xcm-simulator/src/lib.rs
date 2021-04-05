@@ -48,8 +48,6 @@ macro_rules! __decl_test_relay_chain {
 			fn handle_ump_msg(from: u32, msg: Vec<u8>) -> Result<(), ()> {
 				use $crate::runtime_parachains::ump::UmpSink;
 
-				println!("Ump sent: from {:?}, msg {:?}", from, msg);
-
 				Self::execute_with(|| {
 					$relay_mod::UmpSink::process_upward_message(from.into(), msg);
 				});
@@ -189,10 +187,14 @@ macro_rules! decl_test_network {
 
 		impl $crate::traits::XcmRelay for $name {
 			fn send_ump_msg(from: u32, msg: Vec<u8>) -> Result<(), ()> {
+				println!("ump: from {:?}, msg {:?}", from, msg);
+
 				MockRelay::handle_ump_msg(from, msg)
 			}
 
 			fn send_hrmp_msg(from: u32, to: u32, msg: $crate::xcm::VersionedXcm) -> Result<(), ()> {
+				println!("hrmp: from {:?}, to {:?}, msg {:?}", from, to, msg);
+
 				match to {
 					$( $para_id => <$parachain>::handle_hrmp_msg(from, msg), )*
 					_ => Err(()),
@@ -200,6 +202,8 @@ macro_rules! decl_test_network {
 			}
 
 			fn send_dmp_msg(to: u32, msg: $crate::xcm::v0::Xcm) -> $crate::xcm::v0::Result {
+				println!("dmp: to {:?}, msg {:?}", to, msg);
+
 				match to {
 					$( $para_id => <$parachain>::handle_dmp_msg(msg), )*
 					_ => Err($crate::xcm::v0::Error::CannotReachDestination),

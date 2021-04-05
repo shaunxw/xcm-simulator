@@ -104,7 +104,7 @@ macro_rules! __construct_relay_chain_runtime {
 			pub struct XcmConfig;
 			impl $crate::xcm_executor::Config for XcmConfig {
 				type Call = Call;
-				type XcmSender = ();
+				type XcmSender = XcmSender;
 				type AssetTransactor = LocalAssetTransactor;
 				type OriginConverter = LocalOriginConverter;
 				type IsReserve = ();
