@@ -2,6 +2,7 @@ pub use paste;
 
 pub use frame_support;
 pub use frame_system;
+pub use pallet_balances;
 pub use sp_core;
 pub use sp_io;
 pub use sp_runtime;
@@ -34,6 +35,9 @@ macro_rules! __decl_test_relay_chain {
 		pub struct $name:ident {
 			new_ext = $new_ext:expr,
 		}
+		pub mod $relay_mod:ident {
+			test_network = $test_network:path,
+		}
 	) => {
 		pub struct $name;
 
@@ -41,16 +45,21 @@ macro_rules! __decl_test_relay_chain {
 
 		impl $crate::traits::UmpMsgHandler for $name {
 			fn handle_ump_msg(from: u32, msg: Vec<u8>) -> Result<(), ()> {
-				use $crate::relay_chain::default;
 				use $crate::runtime_parachains::ump::UmpSink;
 
 				println!("Ump sent: from {:?}, msg {:?}", from, msg);
 
 				Self::execute_with(|| {
-					default::UmpSink::process_upward_message(from.into(), msg);
+					$relay_mod::UmpSink::process_upward_message(from.into(), msg);
 				});
 
 				Ok(())
+			}
+		}
+
+		$crate::__construct_relay_chain_runtime! {
+			pub mod $relay_mod {
+				test_network = $test_network,
 			}
 		}
 	};
@@ -153,7 +162,10 @@ macro_rules! decl_test_network {
 
 		$crate::__decl_test_relay_chain! {
 			pub struct MockRelay {
-				new_ext = $crate::relay_chain::default::ext(),
+				new_ext = $crate::relay_chain::default_ext::<relay::Runtime>(),
+			}
+			pub mod relay {
+				test_network = $name,
 			}
 		}
 

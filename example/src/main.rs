@@ -1,7 +1,7 @@
 fn main() {}
 
-#[cfg(test)]
-mod tests {
+// #[cfg(test)]
+// mod tests {
 	use xcm::v0::{Junction, OriginKind, SendXcm, Xcm};
 	use xcm_simulator::{decl_test_network, decl_test_parachain, prelude::*};
 
@@ -109,7 +109,7 @@ mod tests {
 		// note: sadly there is no event for ump execution in relay chain https://github.com/paritytech/polkadot/issues/2720
 		MockRelay::execute_with(|| {
 			println!(">>> Relay chain events:");
-			relay_chain::default::System::events().iter().for_each(|r| {
+			relay::System::events().iter().for_each(|r| {
 				println!("{:?}", r.event);
 			});
 		});
@@ -131,9 +131,9 @@ mod tests {
 		});
 		MockRelay::execute_with(|| {
 			println!(">>> relay chain events:");
-			relay_chain::default::System::events().iter().for_each(|r| {
+			relay::System::events().iter().for_each(|r| {
 				println!("{:?}", r.event);
 			});
 		});
 	}
-}
+// }

@@ -4227,6 +4227,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "orml-nft",
+ "pallet-balances",
  "parachain-info",
  "parity-scale-codec",
  "serde",

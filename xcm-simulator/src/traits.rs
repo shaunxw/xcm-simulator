@@ -1,4 +1,4 @@
-use xcm::VersionedXcm;
+use xcm::{v0::Xcm, VersionedXcm};
 
 pub trait TestExt {
 	fn new_ext() -> sp_io::TestExternalities;
@@ -17,6 +17,7 @@ pub trait HrmpMsgHandler {
 pub trait XcmRelay {
 	fn send_ump_msg(from: u32, msg: Vec<u8>) -> Result<(), ()>;
 	fn send_hrmp_msg(from: u32, to: u32, msg: VersionedXcm) -> Result<(), ()>;
+	// fn send_dmp_msg(to: u32, msg: Xcm) -> Result<(), ()>;
 }
 
 pub trait GetParaId {
