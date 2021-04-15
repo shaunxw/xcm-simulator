@@ -1,4 +1,4 @@
-use xcm::{v0::{Xcm, Result as XcmResult}, VersionedXcm};
+use xcm::{v0::{Result as XcmResult,opaque::Xcm}, opaque::VersionedXcm};
 
 pub trait TestExt {
 	fn new_ext() -> sp_io::TestExternalities;
@@ -11,17 +11,17 @@ pub trait UmpMsgHandler {
 }
 
 pub trait HrmpMsgHandler {
-	fn handle_hrmp_msg(from: u32, msg: VersionedXcm<()>) -> Result<(), ()>;
+	fn handle_hrmp_msg(from: u32, msg: VersionedXcm) -> Result<(), ()>;
 }
 
 pub trait DmpMsgHandler {
-	fn handle_dmp_msg(msg: Xcm<()>) -> XcmResult;
+	fn handle_dmp_msg(msg: Xcm) -> XcmResult;
 }
 
 pub trait XcmRelay {
 	fn send_ump_msg(from: u32, msg: Vec<u8>) -> Result<(), ()>;
-	fn send_hrmp_msg(from: u32, to: u32, msg: VersionedXcm<()>) -> Result<(), ()>;
-	fn send_dmp_msg(to: u32, msg: Xcm<()>) -> XcmResult;
+	fn send_hrmp_msg(from: u32, to: u32, msg: VersionedXcm) -> Result<(), ()>;
+	fn send_dmp_msg(to: u32, msg: Xcm) -> XcmResult;
 }
 
 pub trait GetParaId {
