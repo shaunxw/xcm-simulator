@@ -21,7 +21,7 @@ macro_rules! __construct_parachain_runtime {
 				xcm_config = {
 					$crate::frame_support::parameter_types! {
 						pub Network: $crate::xcm::v0::NetworkId = $crate::xcm::v0::NetworkId::Any;
-						pub RelayChainOrigin: Origin = Into::<Origin>::into($crate::cumulus_pallet_xcm_handler::Origin::Relay);
+						pub RelayChainOrigin: Origin = Into::<Origin>::into($crate::cumulus_pallet_xcm::Origin::Relay);
 						pub Ancestry: $crate::xcm::v0::MultiLocation = $crate::xcm::v0::MultiLocation::X1(
 							$crate::xcm::v0::Junction::Parachain {
 								id: <ParachainInfo as $crate::frame_support::traits::Get<_>>::get().into(),
@@ -38,19 +38,41 @@ macro_rules! __construct_parachain_runtime {
 					pub type LocalOriginConverter = (
 						$crate::xcm_builder::SovereignSignedViaLocation<LocationConverter, Origin>,
 						$crate::xcm_builder::RelayChainAsNative<RelayChainOrigin, Origin>,
-						$crate::xcm_builder::SiblingParachainAsNative<$crate::cumulus_pallet_xcm_handler::Origin, Origin>,
+						$crate::xcm_builder::SiblingParachainAsNative<$crate::cumulus_pallet_xcm::Origin, Origin>,
 						$crate::xcm_builder::SignedAccountId32AsNative<Network, Origin>,
 					);
+
+					pub struct XcmSender;
+					impl $crate::xcm::v0::SendXcm for XcmSender {
+						fn send_xcm(dest: $crate::xcm::v0::MultiLocation, msg: $crate::xcm::v0::opaque::Xcm) -> $crate::xcm::v0::Result {
+							use $crate::xcm::v0::{MultiLocation::*, Junction::*, Error};
+
+							if let X1(Parachain { id }) = dest {
+								<$test_network>::send_dmp_msg(id, msg)
+							} else {
+								Err(Error::CannotReachDestination(dest, msg))
+							}
+						}
+					}
+
+					$crate::frame_support::parameter_types! {
+						pub UnitWeightCost: $crate::frame_support::weights::Weight = 1_000;
+						pub const WeightPrice: ($crate::xcm::v0::MultiLocation, u128) = ($crate::xcm::v0::MultiLocation::X1($crate::xcm::v0::Junction::Parent), 1_000);
+					}
 
 					pub struct XcmConfig;
 					impl $crate::xcm_executor::Config for XcmConfig {
 						type Call = Call;
-						type XcmSender = XcmHandler;
+						type XcmSender = XcmSender;
 						type AssetTransactor = ();
 						type OriginConverter = LocalOriginConverter;
-						type IsReserve = $crate::xcm_executor::traits::NativeAsset;
+						type IsReserve = $crate::xcm_builder::NativeAsset;
 						type IsTeleporter = ();
 						type LocationInverter = $crate::xcm_builder::LocationInverter<Ancestry>;
+						type Barrier = ();
+						type Weigher = $crate::xcm_builder::FixedWeightBounds<UnitWeightCost, Call>;
+						type Trader = $crate::xcm_builder::FixedRateOfConcreteFungible<WeightPrice>;
+						type ResponseHandler = ();
 					}
 				},
 				extra_config = {
@@ -104,7 +126,7 @@ macro_rules! __construct_parachain_runtime {
 				type BaseCallFilter = ();
 				type SystemWeightInfo = ();
 				type SS58Prefix = ();
-				type OnSetCode = ();
+				type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
 			}
 
 			impl $crate::parachain_info::Config for Runtime {}
@@ -119,34 +141,35 @@ macro_rules! __construct_parachain_runtime {
 				}
 			}
 
-			impl $crate::cumulus_primitives_core::XcmpMessageSender for MockMessenger {
-				fn send_xcm_message(
-					dest: $crate::cumulus_primitives_core::ParaId,
-					msg: xcm::VersionedXcm,
-					qos: $crate::cumulus_primitives_core::ServiceQuality
-				) -> Result<u32, $crate::cumulus_primitives_core::MessageSendError> {
-					let _ = <$test_network>::send_hrmp_msg(ParachainInfo::parachain_id().into(), dest.into(), msg);
-					Ok(0)
-				}
+			impl $crate::cumulus_primitives_core::XcmpMessageSource for MockMessenger {
+				fn take_outbound_messages(
+					_maximum_channels: usize
+				) -> Vec<($crate::cumulus_primitives_core::ParaId, Vec<u8>)> { vec![] }
+			}
 
-				fn send_blob_message(
-					dest: $crate::cumulus_primitives_core::ParaId,
-					msg: Vec<u8>,
-					qos: $crate::cumulus_primitives_core::ServiceQuality
-				) -> Result<u32, $crate::cumulus_primitives_core::MessageSendError> {
-					Ok(0)
-				}
+			impl $crate::cumulus_primitives_core::XcmpMessageHandler for MockMessenger {
+				fn handle_xcmp_messages<'a, I: Iterator<Item=($crate::cumulus_primitives_core::ParaId, $crate::polkadot_core_primitives::BlockNumber, &'a [u8])>>(
+					iter: I,
+					_max_weight: $crate::frame_support::weights::Weight,
+				) -> $crate::frame_support::weights::Weight { for _ in iter {} 0 }
+			}
+
+			impl $crate::cumulus_primitives_core::DownwardMessageHandler for MockMessenger {
+				fn handle_downward_message(_msg: $crate::cumulus_primitives_core::InboundDownwardMessage) -> $crate::frame_support::weights::Weight { 0 }
 			}
 
 			$( $xcm_config )*
 
-			impl $crate::cumulus_pallet_xcm_handler::Config for Runtime {
+			impl $crate::cumulus_pallet_xcm::Config for Runtime {}
+
+			impl $crate::cumulus_pallet_parachain_system::Config for Runtime {
 				type Event = Event;
-				type XcmExecutor = $crate::xcm_executor::XcmExecutor<XcmConfig>;
-				type UpwardMessageSender = MockMessenger;
-				type XcmpMessageSender = MockMessenger;
-				type SendXcmOrigin = $crate::frame_system::EnsureRoot<AccountId>;
-				type AccountIdConverter = LocationConverter;
+				type OnValidationData = ();
+				type SelfParaId = parachain_info::Module<Runtime>;
+				type DownwardMessageHandlers = MockMessenger;
+				type OutboundXcmpMessageSource = MockMessenger;
+				type XcmpMessageHandler = MockMessenger;
+				type ReservedXcmpWeight = ();
 			}
 
 			$( $extra_config )*
@@ -164,8 +187,8 @@ macro_rules! __construct_parachain_runtime {
 					// https://github.com/paritytech/substrate/issues/8085
 					System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
 					ParachainInfo: parachain_info::{Pallet, Storage, Config},
-					XcmHandler: cumulus_pallet_xcm_handler::{Pallet, Call, Event<T>, Origin},
-
+					XcmHandler: cumulus_pallet_xcm::{Pallet, Origin},
+					ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>},
 					$( $extra_modules )*
 				}
 			);

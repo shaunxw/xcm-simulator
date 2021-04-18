@@ -74,7 +74,7 @@ macro_rules! __construct_relay_chain_runtime {
 				// Use this currency:
 				Balances,
 				// Use this currency when it is a fungible asset matching the given location or name:
-				$crate::xcm_executor::traits::IsConcrete<RocLocation>,
+				$crate::xcm_builder::IsConcrete<RocLocation>,
 				// We can convert the MultiLocations with our converter above:
 				LocationConverter,
 				// Our chain's account ID type (we can't get away without mentioning it explicitly):
@@ -90,15 +90,20 @@ macro_rules! __construct_relay_chain_runtime {
 
 			pub struct XcmSender;
 			impl $crate::xcm::v0::SendXcm for XcmSender {
-				fn send_xcm(dest: $crate::xcm::v0::MultiLocation, msg: $crate::xcm::v0::Xcm) -> $crate::xcm::v0::Result {
+				fn send_xcm(dest: $crate::xcm::v0::MultiLocation, msg: $crate::xcm::v0::opaque::Xcm) -> $crate::xcm::v0::Result {
 					use $crate::xcm::v0::{MultiLocation::*, Junction::*, Error};
 
 					if let X1(Parachain { id }) = dest {
 						<$test_network>::send_dmp_msg(id, msg)
 					} else {
-						Err(Error::CannotReachDestination)
+						Err(Error::CannotReachDestination(dest, msg))
 					}
 				}
+			}
+
+			$crate::frame_support::parameter_types! {
+				pub UnitWeightCost: $crate::frame_support::weights::Weight = 1_000;
+				pub const WeightPrice: ($crate::xcm::v0::MultiLocation, u128) = ($crate::xcm::v0::MultiLocation::X1($crate::xcm::v0::Junction::Parent), 1_000);
 			}
 
 			pub struct XcmConfig;
@@ -110,16 +115,20 @@ macro_rules! __construct_relay_chain_runtime {
 				type IsReserve = ();
 				type IsTeleporter = ();
 				type LocationInverter = $crate::xcm_builder::LocationInverter<Ancestry>;
+				type Barrier = ();
+				type Weigher = $crate::xcm_builder::FixedWeightBounds<UnitWeightCost, Call>;
+				type Trader = $crate::xcm_builder::FixedRateOfConcreteFungible<WeightPrice>;
+				type ResponseHandler = ();
 			}
 
-			impl $crate::runtime_parachains::origin::Config for Runtime {}
-
-			pub type UmpSink = $crate::runtime_parachains::ump::XcmSink<XcmConfig>;
+			pub type UmpSink = $crate::runtime_parachains::ump::XcmSink<$crate::xcm_executor::XcmExecutor<XcmConfig>, Call>;
 
 			type UncheckedExtrinsic = $crate::frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 			type Block = $crate::frame_system::mocking::MockBlock<Runtime>;
 
 			use $crate::runtime_parachains::origin as runtime_parachains_origin;
+
+			impl runtime_parachains_origin::Config for Runtime {}
 
 			$crate::frame_support::construct_runtime!(
 				pub enum Runtime where

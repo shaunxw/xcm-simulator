@@ -1,5 +1,5 @@
-pub use paste;
 pub use codec;
+pub use paste;
 
 pub use frame_support;
 pub use frame_system;
@@ -9,10 +9,14 @@ pub use sp_io;
 pub use sp_runtime;
 pub use sp_std;
 
+pub use cumulus_pallet_parachain_system;
 pub use cumulus_pallet_xcm;
 pub use cumulus_primitives_core;
+pub use cumulus_primitives_utility;
 pub use parachain_info;
 pub use polkadot_parachain;
+pub use polkadot_runtime_common;
+pub use polkadot_core_primitives;
 pub use runtime_parachains;
 pub use xcm;
 pub use xcm_builder;
@@ -49,7 +53,7 @@ macro_rules! __decl_test_relay_chain {
 				use $crate::runtime_parachains::ump::UmpSink;
 
 				Self::execute_with(|| {
-					$relay_mod::UmpSink::process_upward_message(from.into(), msg);
+					$relay_mod::UmpSink::process_upward_message(from.into(), &msg, 1_000);
 				});
 
 				Ok(())
@@ -89,30 +93,30 @@ macro_rules! decl_test_parachain {
 		}
 
 		impl $crate::HrmpMsgHandler for $name {
-			fn handle_hrmp_msg(from: u32, msg: $crate::xcm::VersionedXcm) -> Result<(), ()> {
+			fn handle_hrmp_msg(from: u32, msg: $crate::xcm::opaque::VersionedXcm) -> Result<(), ()> {
 				use $crate::cumulus_primitives_core::{XcmpMessageHandler, InboundHrmpMessage};
 
-				$name::execute_with(|| {
-					//TODO: `sent_at` - check with runtime
-					$para_mod::XcmHandler::handle_xcm_message(from.into(), 1, msg);
-				});
+				// $name::execute_with(|| {
+				// 	//TODO: `sent_at` - check with runtime
+				// 	$para_mod::ParachainSystem::handle_xcmp_messages(from.into(), 1);
+				// });
 				Ok(())
 			}
 		}
 
 		impl $crate::DmpMsgHandler for $name {
-			fn handle_dmp_msg(msg: $crate::xcm::v0::Xcm) -> $crate::xcm::v0::Result {
+			fn handle_dmp_msg(msg: $crate::xcm::v0::opaque::Xcm) -> $crate::xcm::v0::Result {
 				use $crate::cumulus_primitives_core::{DownwardMessageHandler, InboundDownwardMessage};
 				use $crate::codec::Encode;
 
-				$name::execute_with(|| {
-					//TODO: `sent_at` - check with runtime
-					let dmp_msg = InboundDownwardMessage {
-						sent_at: 1,
-						msg: $crate::xcm::VersionedXcm::from(msg).encode(),
-					};
-					$para_mod::XcmHandler::handle_downward_message(dmp_msg);
-				});
+				// $name::execute_with(|| {
+				// 	//TODO: `sent_at` - check with runtime
+				// 	let dmp_msg = InboundDownwardMessage {
+				// 		sent_at: 1,
+				// 		msg: $crate::xcm::VersionedXcm::from(msg).encode(),
+				// 	};
+				// 	$para_mod::XcmHandler::handle_downward_message(dmp_msg);
+				// });
 				Ok(())
 			}
 		}
@@ -192,7 +196,7 @@ macro_rules! decl_test_network {
 				MockRelay::handle_ump_msg(from, msg)
 			}
 
-			fn send_hrmp_msg(from: u32, to: u32, msg: $crate::xcm::VersionedXcm) -> Result<(), ()> {
+			fn send_hrmp_msg(from: u32, to: u32, msg: $crate::xcm::opaque::VersionedXcm) -> Result<(), ()> {
 				println!("hrmp: from {:?}, to {:?}, msg {:?}", from, to, msg);
 
 				match to {
@@ -201,12 +205,12 @@ macro_rules! decl_test_network {
 				}
 			}
 
-			fn send_dmp_msg(to: u32, msg: $crate::xcm::v0::Xcm) -> $crate::xcm::v0::Result {
+			fn send_dmp_msg(to: u32, msg: $crate::xcm::v0::opaque::Xcm) -> $crate::xcm::v0::Result {
 				println!("dmp: to {:?}, msg {:?}", to, msg);
 
 				match to {
 					$( $para_id => <$parachain>::handle_dmp_msg(msg), )*
-					_ => Err($crate::xcm::v0::Error::CannotReachDestination),
+					_ => Err($crate::xcm::v0::Error::CannotReachDestination($crate::xcm::v0::MultiLocation::Null, msg)),
 				}
 			}
 		}

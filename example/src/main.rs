@@ -2,7 +2,7 @@ fn main() {}
 
 #[cfg(test)]
 mod tests {
-	use xcm::v0::{Junction, OriginKind, SendXcm, Xcm};
+	use xcm::v0::{opaque::Xcm, Junction, OriginKind, SendXcm};
 	use xcm_simulator::{decl_test_network, decl_test_parachain, prelude::*};
 
 	decl_test_parachain! {
@@ -54,11 +54,12 @@ mod tests {
 	fn try_hrmp() {
 		TestNetwork::reset();
 		MockAcala::execute_with(|| {
-			let _ = <mock_acala::XcmHandler as SendXcm>::send_xcm(
+			let _ = <mock_acala::XcmSender as SendXcm>::send_xcm(
 				(Junction::Parent, Junction::Parachain { id: 2 }).into(),
 				Xcm::Transact {
 					origin_type: OriginKind::Native,
-					call: vec![1],
+					require_weight_at_most: 1_000,
+					call: vec![1].into(),
 				},
 			);
 			println!(">>> Acala events:");
@@ -94,11 +95,12 @@ mod tests {
 	fn try_ump() {
 		TestNetwork::reset();
 		MockAcala::execute_with(|| {
-			let _ = <mock_acala::XcmHandler as SendXcm>::send_xcm(
+			let _ = <mock_acala::XcmSender as SendXcm>::send_xcm(
 				Junction::Parent.into(),
 				Xcm::Transact {
 					origin_type: OriginKind::Native,
-					call: vec![1],
+					require_weight_at_most: 1_000,
+					call: vec![1].into(),
 				},
 			);
 			println!(">>> Acala events:");
@@ -117,11 +119,12 @@ mod tests {
 		TestNetwork::reset();
 		println!("------ network reset ------");
 		MockAcala::execute_with(|| {
-			let _ = <mock_acala::XcmHandler as SendXcm>::send_xcm(
+			let _ = <mock_acala::XcmSender as SendXcm>::send_xcm(
 				Junction::Parent.into(),
 				Xcm::Transact {
 					origin_type: OriginKind::Native,
-					call: vec![1],
+					require_weight_at_most: 1_000,
+					call: vec![1].into(),
 				},
 			);
 			println!(">>> Acala events:");
@@ -142,10 +145,14 @@ mod tests {
 		TestNetwork::reset();
 
 		MockRelay::execute_with(|| {
-			relay::XcmSender::send_xcm(Junction::Parachain { id: 1 }.into(), Xcm::Transact {
-				origin_type: OriginKind::Native,
-				call: vec![1],
-			});
+			relay::XcmSender::send_xcm(
+				Junction::Parachain { id: 1 }.into(),
+				Xcm::Transact {
+					origin_type: OriginKind::Native,
+					require_weight_at_most: 1_000,
+					call: vec![1].into(),
+				},
+			);
 
 			println!(">>> Relay chain events:");
 			relay::System::events().iter().for_each(|r| {
