@@ -1,0 +1,30 @@
+name: Cargo checks
+
+on:
+  pull_request:
+    branches:
+    - master
+  push:
+    branches:
+    - master
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install toolchain
+      uses: actions-rs/toolchain@v1.0.6
+      with:
+        profile: minimal
+        toolchain: nightly-2021-03-04
+        components: rustfmt
+        default: true
+    - name: Install clippy
+      run: rustup component add clippy
+    - name: Run clippy
+      run: cargo clippy -- -D warnings
+    - name: Run cargo check
+      run: cargo check --all
+    - name: Run cargo test
+      run: cargo test --all
