@@ -1,4 +1,4 @@
-use xcm::{v0::{Result as XcmResult,opaque::Xcm}, opaque::VersionedXcm};
+use xcm::{v0::{Xcm, Result as XcmResult}, VersionedXcm};
 
 pub trait TestExt {
 	fn new_ext() -> sp_io::TestExternalities;
