@@ -1,3 +1,5 @@
+#![allow(clippy::result_unit_err)]
+
 use xcm::{v0::{Xcm, Result as XcmResult}, VersionedXcm};
 
 pub trait TestExt {
