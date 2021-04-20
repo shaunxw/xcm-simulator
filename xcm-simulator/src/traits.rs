@@ -1,6 +1,9 @@
 #![allow(clippy::result_unit_err)]
 
-use xcm::{v0::{Xcm, Result as XcmResult}, VersionedXcm};
+use xcm::{
+	v0::{Result as XcmResult, Xcm},
+	VersionedXcm,
+};
 
 pub trait TestExt {
 	fn new_ext() -> sp_io::TestExternalities;

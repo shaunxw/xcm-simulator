@@ -20,6 +20,8 @@ jobs:
         toolchain: nightly-2021-03-04
         components: rustfmt
         default: true
+    - name: Check format
+      run: cargo fmt --all -- --check
     - name: Install clippy
       run: rustup component add clippy
     - name: Run clippy

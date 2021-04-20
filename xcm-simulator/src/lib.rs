@@ -1,5 +1,5 @@
-pub use paste;
 pub use codec;
+pub use paste;
 
 pub use frame_support;
 pub use frame_system;
