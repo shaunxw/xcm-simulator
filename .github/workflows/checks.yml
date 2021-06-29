@@ -19,6 +19,7 @@ jobs:
         profile: minimal
         toolchain: nightly-2021-03-04
         components: rustfmt
+        target: wasm32-unknown-unknown
         default: true
     - name: Check format
       run: cargo fmt --all -- --check
