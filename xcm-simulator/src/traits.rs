@@ -1,9 +1,7 @@
 #![allow(clippy::result_unit_err)]
 
-use xcm::{
-	v0::{Result as XcmResult, Xcm},
-	VersionedXcm,
-};
+use cumulus_primitives_core::ParaId;
+use frame_support::weights::Weight;
 
 pub trait TestExt {
 	fn new_ext() -> sp_io::TestExternalities;
@@ -11,24 +9,14 @@ pub trait TestExt {
 	fn execute_with<R>(execute: impl FnOnce() -> R) -> R;
 }
 
-pub trait UmpMsgHandler {
-	fn handle_ump_msg(from: u32, msg: Vec<u8>) -> Result<(), ()>;
+pub trait HandleUmpMessage {
+	fn handle_ump_message(from: ParaId, msg: &[u8], max_weight: Weight);
 }
 
-pub trait HrmpMsgHandler {
-	fn handle_hrmp_msg(from: u32, msg: VersionedXcm) -> Result<(), ()>;
+pub trait HandleDmpMessage {
+	fn handle_dmp_message(at_relay_block: u32, msg: Vec<u8>, max_weight: Weight);
 }
 
-pub trait DmpMsgHandler {
-	fn handle_dmp_msg(msg: Xcm) -> XcmResult;
-}
-
-pub trait XcmRelay {
-	fn send_ump_msg(from: u32, msg: Vec<u8>) -> Result<(), ()>;
-	fn send_hrmp_msg(from: u32, to: u32, msg: VersionedXcm) -> Result<(), ()>;
-	fn send_dmp_msg(to: u32, msg: Xcm) -> XcmResult;
-}
-
-pub trait GetParaId {
-	fn para_id() -> u32;
+pub trait HandleXcmpMessage {
+	fn handle_xcmp_message(from: ParaId, at_relay_block: u32, msg: &[u8], max_weight: Weight);
 }
