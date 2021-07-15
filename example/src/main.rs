@@ -183,27 +183,25 @@ mod tests {
 		});
 	}
 
-	// // NOTE: XCMP won't work until `https://github.com/paritytech/cumulus/pull/510` fixed.
-	// #[test]
-	// fn xcmp() {
-	// 	MockNet::reset();
+	#[test]
+	fn xcmp() {
+		MockNet::reset();
 
-	// 	let remark =
-	// para::Call::System(frame_system::Call::<para::Runtime>::
-	// remark_with_event(vec![1, 2, 3])); 	ParaA::execute_with(|| {
-	// 		assert_ok!(ParachainPalletXcm::send_xcm(
-	// 			Null,
-	// 			X2(Parent, Parachain(2)),
-	// 			Transact {
-	// 				origin_type: OriginKind::SovereignAccount,
-	// 				require_weight_at_most: INITIAL_BALANCE as u64,
-	// 				call: remark.encode().into(),
-	// 			},
-	// 		));
-	// 	});
+		let remark = para::Call::System(frame_system::Call::<para::Runtime>::remark_with_event(vec![1, 2, 3]));
+		ParaA::execute_with(|| {
+			assert_ok!(ParachainPalletXcm::send_xcm(
+				Null,
+				X2(Parent, Parachain(2)),
+				Transact {
+					origin_type: OriginKind::SovereignAccount,
+					require_weight_at_most: INITIAL_BALANCE as u64,
+					call: remark.encode().into(),
+				},
+			));
+		});
 
-	// 	ParaB::execute_with(|| {
-	// 		print_events::<para::Runtime>("ParaB");
-	// 	});
-	// }
+		ParaB::execute_with(|| {
+			print_events::<para::Runtime>("ParaB");
+		});
+	}
 }
