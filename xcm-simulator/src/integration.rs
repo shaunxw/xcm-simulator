@@ -109,8 +109,8 @@ macro_rules! __impl_ext_for_relay_chain {
 								_handle_dmp_message(para_id, msg.sent_at, msg.msg);
 							}
 
-							// note: no need to handle horizontal messages, as the simulator directly sends
-							// them to dest (not relayed).
+							// note: no need to handle horizontal messages, as the
+							// simulator directly sends them to dest (not relayed).
 						}
 					})
 				});
