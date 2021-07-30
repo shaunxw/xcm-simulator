@@ -3,6 +3,8 @@ fn main() {}
 mod para;
 mod relay;
 
+mod integration_tests;
+
 use frame_support::traits::GenesisBuild;
 use sp_runtime::AccountId32;
 use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
@@ -41,7 +43,7 @@ decl_test_network! {
 	}
 }
 
-pub const INITIAL_BALANCE: u128 = 1_000_000_000;
+pub const INITIAL_BALANCE: u128 = 1_000_000_000_000;
 
 pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
 	use para::{Runtime, System};
