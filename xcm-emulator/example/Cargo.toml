@@ -5,40 +5,22 @@ license = "Apache-2.0"
 authors = ["Shaun Wang <spxwang@gmail.com>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 serde = { version = "1.0.124", optional = true }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
 
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
-frame-metadata = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
 
-# cumulus
-cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.8" }
-cumulus-pallet-parachain-system = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.8" }
-cumulus-pallet-dmp-queue = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.8" }
-cumulus-pallet-xcmp-queue = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.8" }
-cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.8" }
 parachain-info = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.8" }
+statemine-runtime = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.8" }
 
-# polkadot
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.8" }
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.8" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.8" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.8" }
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.8" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.8" }
 polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.8" }
+kusama-runtime = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.8" }
 
 xcm-emulator = { path = "../" }
-
-# integration tests
-statemine-runtime = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.8" }
-kusama-runtime = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.8" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.8" }

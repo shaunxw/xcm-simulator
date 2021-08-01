@@ -1,7 +1,7 @@
 [workspace]
 members = [
-    "xcm-simulator",
-    "example",
+	"xcm-simulator",
+	"xcm-simulator/example",
 	"xcm-emulator",
 	"xcm-emulator/example",
 ]

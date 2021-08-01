@@ -8659,32 +8659,20 @@ dependencies = [
 name = "xcm-emulator-example"
 version = "0.1.0"
 dependencies = [
- "cumulus-pallet-dmp-queue",
- "cumulus-pallet-parachain-system",
- "cumulus-pallet-xcm",
- "cumulus-pallet-xcmp-queue",
- "cumulus-primitives-core",
- "frame-metadata",
  "frame-support",
  "frame-system",
  "kusama-runtime",
  "pallet-balances",
- "pallet-xcm",
  "parachain-info",
  "parity-scale-codec",
- "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-runtime-parachains",
  "serde",
- "sp-core",
  "sp-io",
  "sp-runtime",
- "sp-std",
  "statemine-runtime",
  "xcm",
- "xcm-builder",
  "xcm-emulator",
- "xcm-executor",
 ]
 
 [[package]]
