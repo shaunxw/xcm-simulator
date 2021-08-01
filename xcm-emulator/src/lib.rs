@@ -286,8 +286,8 @@ macro_rules! decl_integration_test_network {
 
 			// egress channel
 			let e_index = sproof.hrmp_egress_channel_index.get_or_insert_with(Vec::new);
-			for recipient_para_id in [ $( $para_id, )* ] {
-				let recipient_para_id = $crate::ParaId::from(recipient_para_id);
+			for recipient_para_id in &[ $( $para_id, )* ] {
+				let recipient_para_id = $crate::ParaId::from(*recipient_para_id);
 				if let Err(idx) = e_index.binary_search(&recipient_para_id) {
 					e_index.insert(idx, recipient_para_id);
 				}
