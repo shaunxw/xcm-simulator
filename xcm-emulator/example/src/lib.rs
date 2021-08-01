@@ -1,9 +1,7 @@
-use sp_runtime::AccountId32;
 use frame_support::traits::GenesisBuild;
+use sp_runtime::AccountId32;
 
-use xcm_emulator::{
-	decl_integration_test_network, decl_integration_test_parachain, decl_integration_test_relay_chain,
-};
+use xcm_emulator::{decl_integration_test_network, decl_integration_test_parachain, decl_integration_test_relay_chain};
 
 decl_integration_test_parachain! {
 	pub struct Statemine {
