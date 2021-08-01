@@ -1,7 +1,7 @@
-use super::*;
-
+use sp_runtime::AccountId32;
 use frame_support::traits::GenesisBuild;
-use xcm_simulator::{
+
+use xcm_emulator::{
 	decl_integration_test_network, decl_integration_test_parachain, decl_integration_test_relay_chain,
 };
 
@@ -29,6 +29,9 @@ decl_integration_test_network! {
 		],
 	}
 }
+
+pub const ALICE: AccountId32 = AccountId32::new([0u8; 32]);
+pub const INITIAL_BALANCE: u128 = 1_000_000_000_000;
 
 pub fn statemine_ext() -> sp_io::TestExternalities {
 	use statemine_runtime::{Runtime, System};
@@ -136,7 +139,7 @@ mod tests {
 		MultiLocation::*,
 		NetworkId,
 	};
-	use xcm_simulator::TestExt;
+	use xcm_emulator::TestExt;
 
 	fn print_events<T: frame_system::Config>(context: &str) {
 		println!("------ {:?} events ------", context);

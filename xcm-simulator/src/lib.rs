@@ -2,28 +2,18 @@ pub use codec::Encode;
 pub use paste;
 
 pub use frame_support::{
-	traits::{Get, Hooks},
+	traits::Get,
 	weights::Weight,
 };
-pub use frame_system;
 pub use sp_io::TestExternalities;
 pub use sp_std::{cell::RefCell, marker::PhantomData};
 
 pub use cumulus_pallet_dmp_queue;
-pub use cumulus_pallet_parachain_system;
 pub use cumulus_pallet_xcmp_queue;
-pub use cumulus_primitives_core::{self, ParaId, PersistedValidationData};
-pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
-pub use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
-pub use parachain_info;
-
-pub use polkadot_primitives;
+pub use cumulus_primitives_core::{self, ParaId};
 pub use polkadot_runtime_parachains::{dmp, ump};
 pub use xcm::{v0::prelude::*, VersionedXcm};
 pub use xcm_executor::XcmExecutor;
-
-/// Simulations for integration tests.
-pub mod integration;
 
 mod traits;
 pub use traits::{HandleDmpMessage, HandleUmpMessage, HandleXcmpMessage, TestExt};
