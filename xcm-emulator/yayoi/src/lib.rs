@@ -47,8 +47,8 @@ pub enum CurrencyId {
 	Mushroom,
 }
 
-pub const PUMPKIN_STR: &'static str = "Pumpkin";
-pub const MUSHROOM_STR: &'static str = "Mushroom";
+pub const PUMPKIN_STR: &str = "Pumpkin";
+pub const MUSHROOM_STR: &str = "Mushroom";
 
 pub struct CurrencyIdConvert;
 impl Convert<CurrencyId, Option<MultiLocation>> for CurrencyIdConvert {
