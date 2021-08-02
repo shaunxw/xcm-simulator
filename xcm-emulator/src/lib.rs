@@ -12,21 +12,30 @@ pub use sp_std::{cell::RefCell, marker::PhantomData};
 pub use cumulus_pallet_dmp_queue;
 pub use cumulus_pallet_parachain_system;
 pub use cumulus_pallet_xcmp_queue;
-pub use cumulus_primitives_core::{self, ParaId, PersistedValidationData};
+pub use cumulus_primitives_core::{
+	self, relay_chain::BlockNumber as RelayBlockNumber, DmpMessageHandler, ParaId, PersistedValidationData,
+	XcmpMessageHandler,
+};
 pub use cumulus_primitives_parachain_inherent::ParachainInherentData;
 pub use cumulus_test_relay_sproof_builder::RelayStateSproofBuilder;
 pub use parachain_info;
 
 pub use polkadot_primitives;
-pub use polkadot_runtime_parachains::{dmp, ump};
+pub use polkadot_runtime_parachains::{
+	dmp,
+	ump::{MessageId, UmpSink, XcmSink},
+};
 pub use xcm::{v0::prelude::*, VersionedXcm};
 pub use xcm_executor::XcmExecutor;
 
-mod traits;
-pub use traits::{HandleDmpMessage, HandleUmpMessage, HandleXcmpMessage, TestExt};
+pub trait TestExt {
+	fn new_ext() -> sp_io::TestExternalities;
+	fn reset_ext();
+	fn execute_with<R>(execute: impl FnOnce() -> R) -> R;
+}
 
 #[macro_export]
-macro_rules! decl_integration_test_relay_chain {
+macro_rules! decl_test_relay_chain {
 	(
 		pub struct $name:ident {
 			Runtime = $runtime:path,
@@ -38,23 +47,26 @@ macro_rules! decl_integration_test_relay_chain {
 
 		$crate::__impl_ext_for_relay_chain!($name, $runtime, $new_ext);
 
-		impl $crate::HandleUmpMessage for $name {
-			fn handle_ump_message(from: $crate::ParaId, msg: &[u8], max_weight: $crate::Weight) {
-				use $crate::ump::UmpSink;
-				use $crate::TestExt;
+		impl $crate::UmpSink for $name {
+			fn process_upward_message(
+				origin: $crate::ParaId,
+				msg: &[u8],
+				max_weight: $crate::Weight,
+			) -> Result<$crate::Weight, ($crate::MessageId, $crate::Weight)> {
+				use $crate::{TestExt, UmpSink};
 
 				Self::execute_with(|| {
-					let _ = $crate::ump::XcmSink::<$crate::XcmExecutor<$xcm_config>, $runtime>::process_upward_message(
-						from, msg, max_weight,
-					);
-				});
+					$crate::XcmSink::<$crate::XcmExecutor<$xcm_config>, $runtime>::process_upward_message(
+						origin, msg, max_weight,
+					)
+				})
 			}
 		}
 	};
 }
 
 #[macro_export]
-macro_rules! decl_integration_test_parachain {
+macro_rules! decl_test_parachain {
 	(
 		pub struct $name:ident {
 			Runtime = $runtime:path,
@@ -66,31 +78,29 @@ macro_rules! decl_integration_test_parachain {
 
 		$crate::__impl_ext_for_parachain!($name, $runtime, $origin, $new_ext);
 
-		impl $crate::HandleXcmpMessage for $name {
-			fn handle_xcmp_message(from: $crate::ParaId, at_relay_block: u32, msg: &[u8], max_weight: $crate::Weight) {
-				use $crate::cumulus_primitives_core::XcmpMessageHandler;
-				use $crate::TestExt;
+		impl $crate::XcmpMessageHandler for $name {
+			fn handle_xcmp_messages<'a, I: Iterator<Item = ($crate::ParaId, $crate::RelayBlockNumber, &'a [u8])>>(
+				iter: I,
+				max_weight: $crate::Weight,
+			) -> $crate::Weight {
+				use $crate::{TestExt, XcmpMessageHandler};
 
 				$name::execute_with(|| {
-					$crate::cumulus_pallet_xcmp_queue::Pallet::<$runtime>::handle_xcmp_messages(
-						vec![(from, at_relay_block, msg)].into_iter(),
-						max_weight,
-					);
-				});
+					$crate::cumulus_pallet_xcmp_queue::Pallet::<$runtime>::handle_xcmp_messages(iter, max_weight)
+				})
 			}
 		}
 
-		impl $crate::HandleDmpMessage for $name {
-			fn handle_dmp_message(at_relay_block: u32, msg: Vec<u8>, max_weight: $crate::Weight) {
-				use $crate::cumulus_primitives_core::DmpMessageHandler;
-				use $crate::TestExt;
+		impl $crate::DmpMessageHandler for $name {
+			fn handle_dmp_messages(
+				iter: impl Iterator<Item = ($crate::RelayBlockNumber, Vec<u8>)>,
+				max_weight: $crate::Weight,
+			) -> $crate::Weight {
+				use $crate::{DmpMessageHandler, TestExt};
 
 				$name::execute_with(|| {
-					$crate::cumulus_pallet_dmp_queue::Pallet::<$runtime>::handle_dmp_messages(
-						vec![(at_relay_block, msg)].into_iter(),
-						max_weight,
-					);
-				});
+					$crate::cumulus_pallet_dmp_queue::Pallet::<$runtime>::handle_dmp_messages(iter, max_weight)
+				})
 			}
 		}
 	};
@@ -131,12 +141,15 @@ macro_rules! __impl_ext_for_relay_chain {
 						//TODO: mark sent count & filter out sent msg
 						for para_id in _para_ids() {
 							// downward messages
-							let downward_messages = <$runtime>::dmq_contents(para_id.into());
-							for msg in downward_messages {
-								_handle_dmp_message(para_id, msg.sent_at, msg.msg);
+							let downward_messages = <$runtime>::dmq_contents(para_id.into())
+								.into_iter()
+								.map(|inbound| (inbound.sent_at, inbound.msg));
+							if downward_messages.len() == 0 {
+								continue;
 							}
+							_Messenger::send_downward_messages(para_id, downward_messages.into_iter());
 
-							// note: no need to handle horizontal messages, as the
+							// Note: no need to handle horizontal messages, as the
 							// simulator directly sends them to dest (not relayed).
 						}
 					})
@@ -192,22 +205,23 @@ macro_rules! __impl_ext_for_parachain {
 				// send messages if needed
 				$ext_name.with(|v| {
 					v.borrow_mut().execute_with(|| {
-						use $crate::cumulus_primitives_core::runtime_decl_for_CollectCollationInfo::CollectCollationInfo;
 						use $crate::Hooks;
+						type ParachainSystem = $crate::cumulus_pallet_parachain_system::Pallet<$runtime>;
 
 						// get messages
-						$crate::cumulus_pallet_parachain_system::Pallet::<$runtime>::on_finalize(1);
-						let collation_info = <$runtime>::collect_collation_info();
+						ParachainSystem::on_finalize(1);
+						let collation_info = ParachainSystem::collect_collation_info();
 
-						// send Messages
-						// TODO: xcmp
+						// send upward messages
 						let para_id = $crate::parachain_info::Pallet::<$runtime>::get();
 						for msg in collation_info.upward_messages {
-							_handle_ump_message(para_id, msg);
+							_Messenger::send_upward_message(para_id.into(), &msg[..]);
 						}
 
+						// TODO: send horizontal messages
+
 						// clean messages
-						$crate::cumulus_pallet_parachain_system::Pallet::<$runtime>::on_initialize(1);
+						ParachainSystem::on_initialize(1);
 					})
 				});
 
@@ -218,7 +232,7 @@ macro_rules! __impl_ext_for_parachain {
 }
 
 #[macro_export]
-macro_rules! decl_integration_test_network {
+macro_rules! decl_test_network {
 	(
 		pub struct $name:ident {
 			relay_chain = $relay_chain:ty,
@@ -240,39 +254,37 @@ macro_rules! decl_integration_test_network {
 			vec![$( $para_id, )*]
 		}
 
-		fn _handle_dmp_message(para_id: u32, sent_at: u32, msg: Vec<u8>) {
-			use $crate::HandleDmpMessage;
+		pub struct _Messenger;
+		impl _Messenger {
+			fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = ($crate::RelayBlockNumber, Vec<u8>)>) {
+				 use $crate::DmpMessageHandler;
 
-			match para_id {
-				$(
-					// TODO: update max weight
-					$para_id => <$parachain>::handle_dmp_message(sent_at, msg, $crate::Weight::max_value()),
-				)*
-				_ => unreachable!(),
+				 match to_para_id {
+					$(
+						$para_id => { <$parachain>::handle_dmp_messages(iter, $crate::Weight::max_value()); },
+					)*
+					_ => unreachable!(),
+				}
 			}
-		}
 
-		fn _handle_xcmp_message(para_id: u32, from_para_id: $crate::ParaId, sent_at: u32, msg: Vec<u8>) {
-			use $crate::HandleXcmpMessage;
+			fn send_horizontal_messages<
+				'a,
+				I: Iterator<Item = ($crate::ParaId, $crate::RelayBlockNumber, &'a [u8])>,
+			>(from_para_id: u32, to_para_id: u32, iter: I) {
+				use $crate::XcmpMessageHandler;
 
-			match para_id {
-				$(
-					// TODO: update max weight
-					$para_id => <$parachain>::handle_xcmp_message(
-						from_para_id,
-						sent_at,
-						&msg[..],
-						$crate::Weight::max_value(),
-					),
-				)*
-				_ => unreachable!(),
+				match to_para_id {
+					$(
+						$para_id => { <$parachain>::handle_xcmp_messages(iter, $crate::Weight::max_value()); },
+					)*
+					_ => unreachable!(),
+				}
 			}
-		}
 
-		fn _handle_ump_message(para_id: $crate::ParaId, msg: Vec<u8>) {
-			use $crate::HandleUmpMessage;
-
-			<$relay_chain>::handle_ump_message(para_id, &msg[..], $crate::Weight::max_value());
+			fn send_upward_message(from_para_id: u32, msg: &[u8]) {
+				use $crate::UmpSink;
+				let _ =  <$relay_chain>::process_upward_message(from_para_id.into(), msg, $crate::Weight::max_value());
+			}
 		}
 
 		fn _hrmp_channel_parachain_inherent_data(
