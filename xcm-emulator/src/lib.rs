@@ -216,7 +216,6 @@ macro_rules! __impl_ext_for_parachain {
 				// send messages if needed
 				$ext_name.with(|v| {
 					v.borrow_mut().execute_with(|| {
-
 						// get messages
 						ParachainSystem::on_finalize(1);
 						let collation_info = ParachainSystem::collect_collation_info();

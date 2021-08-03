@@ -274,9 +274,9 @@ mod tests {
 	fn xcmp() {
 		Network::reset();
 
-		let remark = yayoi::Call::System(
-			frame_system::Call::<yayoi::Runtime>::remark_with_event("Hello from Pumpkin!".as_bytes().to_vec()),
-		);
+		let remark = yayoi::Call::System(frame_system::Call::<yayoi::Runtime>::remark_with_event(
+			"Hello from Pumpkin!".as_bytes().to_vec(),
+		));
 		YayoiPumpkin::execute_with(|| {
 			assert_ok!(yayoi::PolkadotXcm::send_xcm(
 				Null,
