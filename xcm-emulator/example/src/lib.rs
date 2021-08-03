@@ -193,7 +193,7 @@ mod tests {
 		});
 
 		let remark = kusama_runtime::Call::System(frame_system::Call::<kusama_runtime::Runtime>::remark_with_event(
-			"Hello from Kusama!".as_bytes().to_vec(),
+			"Hello from Pumpkin!".as_bytes().to_vec(),
 		));
 		YayoiPumpkin::execute_with(|| {
 			assert_ok!(yayoi::PolkadotXcm::send_xcm(
