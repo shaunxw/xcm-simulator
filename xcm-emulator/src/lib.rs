@@ -7,7 +7,7 @@ pub use frame_support::{
 };
 pub use frame_system;
 pub use sp_io::TestExternalities;
-pub use sp_std::{cell::RefCell, marker::PhantomData};
+pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, marker::PhantomData};
 
 pub use cumulus_pallet_dmp_queue;
 pub use cumulus_pallet_parachain_system;
@@ -155,6 +155,8 @@ macro_rules! __impl_ext_for_relay_chain {
 					})
 				});
 
+				process_messages();
+
 				r
 			}
 		}
@@ -223,14 +225,14 @@ macro_rules! __impl_ext_for_parachain {
 						// send upward messages
 						let para_id = $crate::parachain_info::Pallet::<$runtime>::get();
 						for msg in collation_info.upward_messages.clone() {
-							_Messenger::send_upward_message(para_id.into(), &msg[..]);
+							_Messenger::send_upward_message(para_id.into(), msg);
 						}
 
 						// send horizontal messages
 						for msg in collation_info.horizontal_messages {
 							_Messenger::send_horizontal_messages(
 								msg.recipient.into(),
-								vec![(para_id.into(), 1, &msg.data[..])].into_iter(),
+								vec![(para_id.into(), 1, msg.data)].into_iter(),
 							);
 						}
 
@@ -239,10 +241,23 @@ macro_rules! __impl_ext_for_parachain {
 					})
 				});
 
+				process_messages();
+
 				r
 			}
 		}
 	};
+}
+
+thread_local! {
+	/// Downward messages, each message is: `(to_para_id, [(relay_block_number, msg)])`
+	pub static DOWNWARD_MESSAGES: RefCell<VecDeque<(u32, Vec<(RelayBlockNumber, Vec<u8>)>)>>
+		= RefCell::new(VecDeque::new());
+	/// Horizontal messages, each message is: `(to_para_id, [(from_para_id, relay_block_number, msg)])`
+	pub static HORIZONTAL_MESSAGES: RefCell<VecDeque<(u32, Vec<(ParaId, RelayBlockNumber, Vec<u8>)>)>>
+		= RefCell::new(VecDeque::new());
+	/// Upward messages, each message is: `(from_para_id, msg)
+	pub static UPWARD_MESSAGES: RefCell<VecDeque<(u32, Vec<u8>)>> = RefCell::new(VecDeque::new());
 }
 
 #[macro_export]
@@ -268,36 +283,78 @@ macro_rules! decl_test_network {
 			vec![$( $para_id, )*]
 		}
 
+		fn process_messages() {
+			while has_unprocessed_messages() {
+				_process_upward_messages();
+				_process_horizontal_messages();
+				_process_downward_messages();
+			}
+		}
+
+		fn has_unprocessed_messages() -> bool {
+			$crate::DOWNWARD_MESSAGES.with(|b| !b.borrow_mut().is_empty())
+			|| $crate::HORIZONTAL_MESSAGES.with(|b| !b.borrow_mut().is_empty())
+			|| $crate::UPWARD_MESSAGES.with(|b| !b.borrow_mut().is_empty())
+		}
+
+		fn _process_downward_messages() {
+			use $crate::DmpMessageHandler;
+
+			while let Some((to_para_id, messages))
+				= $crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().pop_front()) {
+				match to_para_id {
+					$(
+						$para_id => {
+							<$parachain>::handle_dmp_messages(messages.into_iter(), $crate::Weight::max_value());
+						},
+					)*
+					_ => unreachable!(),
+				}
+			}
+		}
+
+		fn _process_horizontal_messages() {
+			use $crate::XcmpMessageHandler;
+
+			while let Some((to_para_id, messages))
+				= $crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().pop_front()) {
+				let iter = messages.iter().map(|(p, b, m)| (*p, *b, &m[..])).collect::<Vec<_>>().into_iter();
+				match to_para_id {
+					$(
+						$para_id => {
+							<$parachain>::handle_xcmp_messages(iter, $crate::Weight::max_value());
+						},
+					)*
+					_ => unreachable!(),
+				}
+			}
+		}
+
+		fn _process_upward_messages() {
+			use $crate::UmpSink;
+			while let Some((from_para_id, msg)) = $crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().pop_front()) {
+				let _ =  <$relay_chain>::process_upward_message(
+					from_para_id.into(),
+					&msg[..],
+					$crate::Weight::max_value(),
+				);
+			}
+		}
+
 		pub struct _Messenger;
 		impl _Messenger {
 			fn send_downward_messages(to_para_id: u32, iter: impl Iterator<Item = ($crate::RelayBlockNumber, Vec<u8>)>) {
-				 use $crate::DmpMessageHandler;
-
-				 match to_para_id {
-					$(
-						$para_id => { <$parachain>::handle_dmp_messages(iter, $crate::Weight::max_value()); },
-					)*
-					_ => unreachable!(),
-				}
+				$crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().push_back((to_para_id, iter.collect())));
 			}
 
 			fn send_horizontal_messages<
-				'a,
-				I: Iterator<Item = ($crate::ParaId, $crate::RelayBlockNumber, &'a [u8])>,
+				I: Iterator<Item = ($crate::ParaId, $crate::RelayBlockNumber, Vec<u8>)>,
 			>(to_para_id: u32, iter: I) {
-				use $crate::XcmpMessageHandler;
-
-				match to_para_id {
-					$(
-						$para_id => { <$parachain>::handle_xcmp_messages(iter, $crate::Weight::max_value()); },
-					)*
-					_ => unreachable!(),
-				}
+				$crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().push_back((to_para_id, iter.collect())));
 			}
 
-			fn send_upward_message(from_para_id: u32, msg: &[u8]) {
-				use $crate::UmpSink;
-				let _ =  <$relay_chain>::process_upward_message(from_para_id.into(), msg, $crate::Weight::max_value());
+			fn send_upward_message(from_para_id: u32, msg: Vec<u8>) {
+				$crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().push_back((from_para_id, msg)));
 			}
 		}
 
