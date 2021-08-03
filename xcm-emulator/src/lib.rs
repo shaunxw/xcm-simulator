@@ -155,7 +155,7 @@ macro_rules! __impl_ext_for_relay_chain {
 					})
 				});
 
-				process_messages();
+				_process_messages();
 
 				r
 			}
@@ -252,7 +252,7 @@ macro_rules! __impl_ext_for_parachain {
 					})
 				});
 
-				process_messages();
+				_process_messages();
 
 				r
 			}
@@ -262,9 +262,11 @@ macro_rules! __impl_ext_for_parachain {
 
 thread_local! {
 	/// Downward messages, each message is: `(to_para_id, [(relay_block_number, msg)])`
+	#[allow(clippy::type_complexity)]
 	pub static DOWNWARD_MESSAGES: RefCell<VecDeque<(u32, Vec<(RelayBlockNumber, Vec<u8>)>)>>
 		= RefCell::new(VecDeque::new());
 	/// Horizontal messages, each message is: `(to_para_id, [(from_para_id, relay_block_number, msg)])`
+	#[allow(clippy::type_complexity)]
 	pub static HORIZONTAL_MESSAGES: RefCell<VecDeque<(u32, Vec<(ParaId, RelayBlockNumber, Vec<u8>)>)>>
 		= RefCell::new(VecDeque::new());
 	/// Upward messages, each message is: `(from_para_id, msg)
@@ -296,15 +298,15 @@ macro_rules! decl_test_network {
 			vec![$( $para_id, )*]
 		}
 
-		fn process_messages() {
-			while has_unprocessed_messages() {
+		fn _process_messages() {
+			while _has_unprocessed_messages() {
 				_process_upward_messages();
 				_process_horizontal_messages();
 				_process_downward_messages();
 			}
 		}
 
-		fn has_unprocessed_messages() -> bool {
+		fn _has_unprocessed_messages() -> bool {
 			$crate::DOWNWARD_MESSAGES.with(|b| !b.borrow_mut().is_empty())
 			|| $crate::HORIZONTAL_MESSAGES.with(|b| !b.borrow_mut().is_empty())
 			|| $crate::UPWARD_MESSAGES.with(|b| !b.borrow_mut().is_empty())

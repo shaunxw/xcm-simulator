@@ -1,8 +1,5 @@
-use codec::Encode;
-
-use cumulus_primitives_core::ParaId;
-use frame_support::traits::{Currency, GenesisBuild};
-use sp_runtime::{traits::AccountIdConversion, AccountId32};
+use frame_support::traits::GenesisBuild;
+use sp_runtime::AccountId32;
 
 use xcm_emulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
 
@@ -184,8 +181,11 @@ pub fn kusama_ext() -> sp_io::TestExternalities {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use codec::Encode;
 
-	use frame_support::assert_ok;
+	use cumulus_primitives_core::ParaId;
+	use frame_support::{assert_ok, traits::Currency};
+	use sp_runtime::traits::AccountIdConversion;
 	use xcm::v0::{
 		Junction::{Parachain, Parent},
 		MultiAsset::*,
