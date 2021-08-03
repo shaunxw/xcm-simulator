@@ -1,9 +1,11 @@
+use codec::Encode;
+
 use frame_support::traits::GenesisBuild;
 use sp_runtime::AccountId32;
 
-use xcm_emulator::{decl_integration_test_network, decl_integration_test_parachain, decl_integration_test_relay_chain};
+use xcm_emulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
 
-decl_integration_test_parachain! {
+decl_test_parachain! {
 	pub struct Statemine {
 		Runtime = statemine_runtime::Runtime,
 		Origin = statemine_runtime::Origin,
@@ -11,7 +13,7 @@ decl_integration_test_parachain! {
 	}
 }
 
-decl_integration_test_relay_chain! {
+decl_test_relay_chain! {
 	pub struct Kusama {
 		Runtime = kusama_runtime::Runtime,
 		XcmConfig = kusama_runtime::XcmConfig,
@@ -19,10 +21,37 @@ decl_integration_test_relay_chain! {
 	}
 }
 
-decl_integration_test_network! {
+decl_test_parachain! {
+	pub struct YayoiPumpkin {
+		Runtime = yayoi::Runtime,
+		Origin = yayoi::Origin,
+		new_ext = yayoi_ext(1),
+	}
+}
+
+decl_test_parachain! {
+	pub struct YayoiMushroom {
+		Runtime = yayoi::Runtime,
+		Origin = yayoi::Origin,
+		new_ext = yayoi_ext(2),
+	}
+}
+
+decl_test_parachain! {
+	pub struct YayoiOctopus {
+		Runtime = yayoi::Runtime,
+		Origin = yayoi::Origin,
+		new_ext = yayoi_ext(3),
+	}
+}
+
+decl_test_network! {
 	pub struct Network {
 		relay_chain = Kusama,
 		parachains = vec![
+			(1, YayoiPumpkin),
+			(2, YayoiMushroom),
+			(3, YayoiOctopus),
 			(1000, Statemine),
 		],
 	}
@@ -40,6 +69,31 @@ pub fn statemine_ext() -> sp_io::TestExternalities {
 
 	let parachain_info_config = parachain_info::GenesisConfig {
 		parachain_id: 1_000.into(),
+	};
+
+	<parachain_info::GenesisConfig as GenesisBuild<Runtime, _>>::assimilate_storage(&parachain_info_config, &mut t)
+		.unwrap();
+
+	pallet_balances::GenesisConfig::<Runtime> {
+		balances: vec![(ALICE, INITIAL_BALANCE)],
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+
+	let mut ext = sp_io::TestExternalities::new(t);
+	ext.execute_with(|| System::set_block_number(1));
+	ext
+}
+
+pub fn yayoi_ext(para_id: u32) -> sp_io::TestExternalities {
+	use yayoi::{Runtime, System};
+
+	let mut t = frame_system::GenesisConfig::default()
+		.build_storage::<Runtime>()
+		.unwrap();
+
+	let parachain_info_config = parachain_info::GenesisConfig {
+		parachain_id: para_id.into(),
 	};
 
 	<parachain_info::GenesisConfig as GenesisBuild<Runtime, _>>::assimilate_storage(&parachain_info_config, &mut t)
@@ -135,7 +189,8 @@ mod tests {
 		Junction::{self, Parachain, Parent},
 		MultiAsset::*,
 		MultiLocation::*,
-		NetworkId,
+		NetworkId, OriginKind,
+		Xcm::*,
 	};
 	use xcm_emulator::TestExt;
 
@@ -215,12 +270,28 @@ mod tests {
 		});
 	}
 
-	// TODO: impl xcmp sim
-	// - refactor the message delivery process
-	//   - every parachain `execute_with` should trigger message delivery in all
-	//     chains.
-	//   - why? when there are more than two parties, the middle-man might also need
-	//     to send messages.
 	#[test]
-	fn xcmp() {}
+	fn xcmp() {
+		Network::reset();
+
+		let remark = yayoi::Call::System(
+			frame_system::Call::<yayoi::Runtime>::remark_with_event("Hello from Pumpkin!".as_bytes().to_vec()),
+		);
+		YayoiPumpkin::execute_with(|| {
+			assert_ok!(yayoi::PolkadotXcm::send_xcm(
+				Null,
+				X2(Parent, Parachain(2)),
+				Transact {
+					origin_type: OriginKind::SovereignAccount,
+					require_weight_at_most: 2_000_000_000,
+					call: remark.encode().into(),
+				},
+			));
+			print_events::<yayoi::Runtime>("Yayoi Pumpkin");
+		});
+
+		YayoiMushroom::execute_with(|| {
+			print_events::<yayoi::Runtime>("Yayoi Mushroom");
+		});
+	}
 }

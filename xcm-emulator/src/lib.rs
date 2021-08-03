@@ -186,14 +186,25 @@ macro_rules! __impl_ext_for_parachain {
 			}
 
 			fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
-				use $crate::Get;
+				use $crate::{Get, Hooks};
+
+				type ParachainSystem = $crate::cumulus_pallet_parachain_system::Pallet<$runtime>;
 
 				// prepare parachain system for messaging
 				$ext_name.with(|v| {
 					v.borrow_mut().execute_with(|| {
 						let block_number = $crate::frame_system::Pallet::<$runtime>::block_number();
 						let para_id = $crate::parachain_info::Pallet::<$runtime>::get();
-						let _ = $crate::cumulus_pallet_parachain_system::Pallet::<$runtime>::set_validation_data(
+
+						// TODO: move setup to network initialization
+						let _ = ParachainSystem::set_validation_data(
+							<$origin>::none(),
+							_hrmp_channel_parachain_inherent_data(para_id.into(), 1),
+						);
+						// set `AnnouncedHrmpMessagesPerCandidate`
+						ParachainSystem::on_initialize(1);
+
+						let _ = ParachainSystem::set_validation_data(
 							<$origin>::none(),
 							_hrmp_channel_parachain_inherent_data(para_id.into(), 1),
 						);
@@ -205,8 +216,6 @@ macro_rules! __impl_ext_for_parachain {
 				// send messages if needed
 				$ext_name.with(|v| {
 					v.borrow_mut().execute_with(|| {
-						use $crate::Hooks;
-						type ParachainSystem = $crate::cumulus_pallet_parachain_system::Pallet<$runtime>;
 
 						// get messages
 						ParachainSystem::on_finalize(1);
@@ -214,11 +223,17 @@ macro_rules! __impl_ext_for_parachain {
 
 						// send upward messages
 						let para_id = $crate::parachain_info::Pallet::<$runtime>::get();
-						for msg in collation_info.upward_messages {
+						for msg in collation_info.upward_messages.clone() {
 							_Messenger::send_upward_message(para_id.into(), &msg[..]);
 						}
 
-						// TODO: send horizontal messages
+						// send horizontal messages
+						for msg in collation_info.horizontal_messages {
+							_Messenger::send_horizontal_messages(
+								msg.recipient.into(),
+								vec![(para_id.into(), 1, &msg.data[..])].into_iter(),
+							);
+						}
 
 						// clean messages
 						ParachainSystem::on_initialize(1);
@@ -270,7 +285,7 @@ macro_rules! decl_test_network {
 			fn send_horizontal_messages<
 				'a,
 				I: Iterator<Item = ($crate::ParaId, $crate::RelayBlockNumber, &'a [u8])>,
-			>(from_para_id: u32, to_para_id: u32, iter: I) {
+			>(to_para_id: u32, iter: I) {
 				use $crate::XcmpMessageHandler;
 
 				match to_para_id {

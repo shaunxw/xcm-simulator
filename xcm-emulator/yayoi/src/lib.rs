@@ -1,104 +1,34 @@
-use codec::{Decode, Encode};
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{All, Get},
+	traits::All,
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 use frame_system::EnsureRoot;
-use serde::{Deserialize, Serialize};
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
 	traits::{Convert, IdentityLookup},
-	AccountId32, RuntimeDebug,
+	AccountId32,
 };
 
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
 use xcm::v0::{
-	Error as XcmError,
 	Junction::{self, Parachain, Parent},
 	MultiAsset,
-	MultiLocation::{self, X1, X2, X3},
+	MultiLocation::{self, X1},
 	NetworkId, Xcm,
 };
 use xcm_builder::{
-	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, EnsureXcmOrigin, FixedWeightBounds, LocationInverter,
+	AccountId32Aliases, EnsureXcmOrigin, FixedWeightBounds, LocationInverter,
 	ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, AllowUnpaidExecutionFrom
 };
-use xcm_executor::{traits::WeightTrader, Assets, Config, XcmExecutor};
-
-use orml_traits::parameter_type_with_key;
-use orml_xcm_support::{IsNativeConcrete, MultiCurrencyAdapter, MultiNativeAsset};
+use xcm_executor::{Config, XcmExecutor};
 
 pub type AccountId = AccountId32;
 pub type Balance = u128;
 pub type Amount = i128;
-
-#[derive(Encode, Decode, Eq, PartialEq, Copy, Clone, RuntimeDebug, PartialOrd, Ord)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub enum CurrencyId {
-	/// Kusama
-	Ksm,
-	/// Parachain ID 1 token. Yayoi's Pumpkin dot art.
-	Pumpkin,
-	/// Parachain ID 2 token. Yayoi's Mushroom dot art. (Sorry Mario)
-	Mushroom,
-}
-
-pub const PUMPKIN_STR: &str = "Pumpkin";
-pub const MUSHROOM_STR: &str = "Mushroom";
-
-pub struct CurrencyIdConvert;
-impl Convert<CurrencyId, Option<MultiLocation>> for CurrencyIdConvert {
-	fn convert(id: CurrencyId) -> Option<MultiLocation> {
-		match id {
-			CurrencyId::Ksm => Some(Junction::Parent.into()),
-			CurrencyId::Pumpkin => Some(
-				(
-					Junction::Parent,
-					Junction::Parachain(1),
-					Junction::GeneralKey(PUMPKIN_STR.into()),
-				)
-					.into(),
-			),
-			CurrencyId::Mushroom => Some(
-				(
-					Junction::Parent,
-					Junction::Parachain(2),
-					Junction::GeneralKey(MUSHROOM_STR.into()),
-				)
-					.into(),
-			),
-		}
-	}
-}
-impl Convert<MultiLocation, Option<CurrencyId>> for CurrencyIdConvert {
-	fn convert(l: MultiLocation) -> Option<CurrencyId> {
-		let pumpkin: Vec<u8> = PUMPKIN_STR.into();
-		let mushroom: Vec<u8> = PUMPKIN_STR.into();
-		match l {
-			X1(Parent) => Some(CurrencyId::Ksm),
-			X3(Junction::Parent, Junction::Parachain(1), Junction::GeneralKey(k)) if k == pumpkin => {
-				Some(CurrencyId::Pumpkin)
-			}
-			X3(Junction::Parent, Junction::Parachain(2), Junction::GeneralKey(k)) if k == mushroom => {
-				Some(CurrencyId::Mushroom)
-			}
-			_ => Option::None,
-		}
-	}
-}
-impl Convert<MultiAsset, Option<CurrencyId>> for CurrencyIdConvert {
-	fn convert(a: MultiAsset) -> Option<CurrencyId> {
-		if let MultiAsset::ConcreteFungible { id, amount: _ } = a {
-			Self::convert(id)
-		} else {
-			Option::None
-		}
-	}
-}
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
@@ -148,23 +78,6 @@ impl pallet_balances::Config for Runtime {
 	type ReserveIdentifier = [u8; 8];
 }
 
-parameter_type_with_key! {
-	pub ExistentialDeposits: |_currency_id: CurrencyId| -> Balance {
-		Default::default()
-	};
-}
-
-impl orml_tokens::Config for Runtime {
-	type Event = Event;
-	type Balance = Balance;
-	type Amount = Amount;
-	type CurrencyId = CurrencyId;
-	type WeightInfo = ();
-	type ExistentialDeposits = ExistentialDeposits;
-	type OnDust = ();
-	type MaxLocks = MaxLocks;
-}
-
 impl parachain_info::Config for Runtime {}
 
 parameter_types! {
@@ -192,15 +105,7 @@ parameter_types! {
 	pub const UnitWeightCost: Weight = 10;
 }
 
-pub type LocalAssetTransactor = MultiCurrencyAdapter<
-	Tokens,
-	(),
-	IsNativeConcrete<CurrencyId, CurrencyIdConvert>,
-	AccountId,
-	LocationToAccountId,
-	CurrencyId,
-	CurrencyIdConvert,
->;
+pub type LocalAssetTransactor = ();
 
 /// The means for routing XCM messages which are not for local execution into
 /// the right message queues.
@@ -211,42 +116,7 @@ pub type XcmRouter = (
 	XcmpQueue,
 );
 
-pub type Barrier = (TakeWeightCredit, AllowTopLevelPaidExecutionFrom<All<MultiLocation>>);
-
-/// A trader who believes all tokens are created equal to "weight" of any chain,
-/// which is not true, but good enough to mock the fee payment of XCM execution.
-///
-/// This mock will always trade `n` amount of weight to `n` amount of tokens.
-pub struct AllTokensAreCreatedEqualToWeight(MultiLocation);
-impl WeightTrader for AllTokensAreCreatedEqualToWeight {
-	fn new() -> Self {
-		Self(MultiLocation::Null)
-	}
-
-	fn buy_weight(&mut self, weight: Weight, payment: Assets) -> Result<Assets, XcmError> {
-		let asset_id = payment
-			.fungible
-			.iter()
-			.next()
-			.expect("Payment must be something; qed")
-			.0;
-		let required = asset_id.clone().into_fungible_multiasset(weight as u128);
-
-		if let MultiAsset::ConcreteFungible { ref id, amount: _ } = required {
-			self.0 = id.clone();
-		}
-
-		let (unused, _) = payment.less(required).map_err(|_| XcmError::TooExpensive)?;
-		Ok(unused)
-	}
-
-	fn refund_weight(&mut self, weight: Weight) -> MultiAsset {
-		MultiAsset::ConcreteFungible {
-			id: self.0.clone(),
-			amount: weight as u128,
-		}
-	}
-}
+pub type Barrier = AllowUnpaidExecutionFrom<All<MultiLocation>>;
 
 pub struct XcmConfig;
 impl Config for XcmConfig {
@@ -254,12 +124,12 @@ impl Config for XcmConfig {
 	type XcmSender = XcmRouter;
 	type AssetTransactor = LocalAssetTransactor;
 	type OriginConverter = XcmOriginToCallOrigin;
-	type IsReserve = MultiNativeAsset;
+	type IsReserve = ();
 	type IsTeleporter = ();
 	type LocationInverter = LocationInverter<Ancestry>;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
-	type Trader = AllTokensAreCreatedEqualToWeight;
+	type Trader = ();
 	type ResponseHandler = ();
 }
 
@@ -320,28 +190,6 @@ impl Convert<AccountId, MultiLocation> for AccountIdToMultiLocation {
 	}
 }
 
-parameter_types! {
-	pub SelfLocation: MultiLocation = X2(Parent, Parachain(ParachainInfo::get().into()));
-	pub const BaseXcmWeight: Weight = 100_000_000;
-}
-
-impl orml_xtokens::Config for Runtime {
-	type Event = Event;
-	type Balance = Balance;
-	type CurrencyId = CurrencyId;
-	type CurrencyIdConvert = CurrencyIdConvert;
-	type AccountIdToMultiLocation = AccountIdToMultiLocation;
-	type SelfLocation = SelfLocation;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
-	type BaseXcmWeight = BaseXcmWeight;
-}
-
-impl orml_xcm::Config for Runtime {
-	type Event = Event;
-	type SovereignOrigin = EnsureRoot<AccountId>;
-}
-
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 type Block = frame_system::mocking::MockBlock<Runtime>;
 
@@ -360,10 +208,6 @@ construct_runtime!(
 		DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>},
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin},
 
-		Tokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>},
-		XTokens: orml_xtokens::{Pallet, Storage, Call, Event<T>},
-
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},
-		OrmlXcm: orml_xcm::{Pallet, Call, Event<T>},
 	}
 );

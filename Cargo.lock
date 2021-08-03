@@ -3726,7 +3726,6 @@ dependencies = [
  "max-encoded-len",
  "orml-traits",
  "parity-scale-codec",
- "serde",
  "sp-runtime",
  "sp-std",
 ]
@@ -3741,7 +3740,6 @@ dependencies = [
  "num-traits",
  "orml-utilities",
  "parity-scale-codec",
- "serde",
  "sp-io",
  "sp-runtime",
  "sp-std",
@@ -3755,55 +3753,9 @@ source = "git+https://github.com/open-web3-stack/open-runtime-module-library#33d
 dependencies = [
  "frame-support",
  "parity-scale-codec",
- "serde",
  "sp-io",
  "sp-runtime",
  "sp-std",
-]
-
-[[package]]
-name = "orml-xcm"
-version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library#33d9ac0927ba61e15763ee438721ef92d408271a"
-dependencies = [
- "frame-support",
- "frame-system",
- "pallet-xcm",
- "parity-scale-codec",
- "xcm",
-]
-
-[[package]]
-name = "orml-xcm-support"
-version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library#33d9ac0927ba61e15763ee438721ef92d408271a"
-dependencies = [
- "frame-support",
- "orml-traits",
- "parity-scale-codec",
- "sp-runtime",
- "sp-std",
- "xcm",
- "xcm-executor",
-]
-
-[[package]]
-name = "orml-xtokens"
-version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library#33d9ac0927ba61e15763ee438721ef92d408271a"
-dependencies = [
- "cumulus-primitives-core",
- "frame-support",
- "frame-system",
- "orml-traits",
- "orml-xcm-support",
- "parity-scale-codec",
- "serde",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "xcm",
- "xcm-executor",
 ]
 
 [[package]]
@@ -8749,6 +8701,7 @@ dependencies = [
 name = "xcm-emulator-example"
 version = "0.1.0"
 dependencies = [
+ "cumulus-primitives-core",
  "frame-support",
  "frame-system",
  "kusama-runtime",
@@ -8756,6 +8709,7 @@ dependencies = [
  "pallet-balances",
  "parachain-info",
  "parity-scale-codec",
+ "polkadot-parachain",
  "polkadot-primitives",
  "polkadot-runtime-parachains",
  "serde",
@@ -8854,11 +8808,6 @@ dependencies = [
  "cumulus-primitives-utility",
  "frame-support",
  "frame-system",
- "orml-tokens",
- "orml-traits",
- "orml-xcm",
- "orml-xcm-support",
- "orml-xtokens",
  "pallet-balances",
  "pallet-xcm",
  "parachain-info",
