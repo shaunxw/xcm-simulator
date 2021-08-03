@@ -1,7 +1,8 @@
 use codec::Encode;
 
-use frame_support::traits::GenesisBuild;
-use sp_runtime::AccountId32;
+use cumulus_primitives_core::ParaId;
+use frame_support::traits::{Currency, GenesisBuild};
+use sp_runtime::{traits::AccountIdConversion, AccountId32};
 
 use xcm_emulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
 
@@ -186,47 +187,39 @@ mod tests {
 
 	use frame_support::assert_ok;
 	use xcm::v0::{
-		Junction::{self, Parachain, Parent},
+		Junction::{Parachain, Parent},
 		MultiAsset::*,
 		MultiLocation::*,
-		NetworkId, OriginKind,
+		Order::BuyExecution,
+		OriginKind,
 		Xcm::*,
 	};
 	use xcm_emulator::TestExt;
-
-	fn print_events<T: frame_system::Config>(context: &str) {
-		println!("------ {:?} events ------", context);
-		frame_system::Pallet::<T>::events().iter().for_each(|r| {
-			println!("{:?}", r.event);
-		});
-	}
 
 	#[test]
 	fn dmp() {
 		Network::reset();
 
+		let remark = yayoi::Call::System(frame_system::Call::<yayoi::Runtime>::remark_with_event(
+			"Hello from Kusama!".as_bytes().to_vec(),
+		));
 		Kusama::execute_with(|| {
-			use kusama_runtime::{Origin, Runtime, XcmPallet};
-
-			assert_ok!(XcmPallet::teleport_assets(
-				Origin::signed(ALICE),
-				Parachain(1000).into(),
-				Junction::AccountId32 {
-					network: NetworkId::Any,
-					id: ALICE.into(),
+			assert_ok!(kusama_runtime::XcmPallet::send_xcm(
+				Null,
+				Parachain(1).into(),
+				Transact {
+					origin_type: OriginKind::SovereignAccount,
+					require_weight_at_most: 10_000_000,
+					call: remark.encode().into(),
 				}
-				.into(),
-				vec![ConcreteFungible {
-					id: Null,
-					amount: 1_000_000_000_000
-				}],
-				1_000_000_000
 			));
-			print_events::<Runtime>("Kusama");
 		});
 
-		Statemine::execute_with(|| {
-			print_events::<statemine_runtime::Runtime>("Statemine");
+		YayoiPumpkin::execute_with(|| {
+			use yayoi::{Event, System};
+			assert!(System::events()
+				.iter()
+				.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked(_, _)))));
 		});
 	}
 
@@ -235,38 +228,41 @@ mod tests {
 		Network::reset();
 
 		Kusama::execute_with(|| {
-			use kusama_runtime::{Balances, CheckAccount, Origin};
-
-			assert_ok!(Balances::set_balance(
-				Origin::root(),
-				CheckAccount::get().into(),
-				1_000_000_000_000,
-				0
-			));
+			let _ = kusama_runtime::Balances::deposit_creating(&ParaId::from(1).into_account(), 1_000_000_000_000);
 		});
 
-		Statemine::execute_with(|| {
-			use statemine_runtime::{Origin, PolkadotXcm, Runtime};
-
-			assert_ok!(PolkadotXcm::teleport_assets(
-				Origin::signed(ALICE),
+		let remark = kusama_runtime::Call::System(frame_system::Call::<kusama_runtime::Runtime>::remark_with_event(
+			"Hello from Kusama!".as_bytes().to_vec(),
+		));
+		YayoiPumpkin::execute_with(|| {
+			assert_ok!(yayoi::PolkadotXcm::send_xcm(
+				Null,
 				Parent.into(),
-				Junction::AccountId32 {
-					network: NetworkId::Kusama,
-					id: ALICE.into(),
+				WithdrawAsset {
+					assets: vec![ConcreteFungible {
+						id: Null,
+						amount: 1_000_000_000_000
+					}],
+					effects: vec![BuyExecution {
+						fees: All,
+						weight: 10_000_000,
+						debt: 10_000_000,
+						halt_on_error: true,
+						xcm: vec![Transact {
+							origin_type: OriginKind::SovereignAccount,
+							require_weight_at_most: 1_000_000_000,
+							call: remark.encode().into(),
+						}],
+					}]
 				}
-				.into(),
-				vec![ConcreteFungible {
-					id: Parent.into(),
-					amount: 1_000_000_000_000,
-				}],
-				3_000_000_000
 			));
-			print_events::<Runtime>("Statemine");
 		});
 
 		Kusama::execute_with(|| {
-			print_events::<kusama_runtime::Runtime>("Kusama");
+			use kusama_runtime::{Event, System};
+			assert!(System::events()
+				.iter()
+				.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked(_, _)))));
 		});
 	}
 
@@ -283,15 +279,63 @@ mod tests {
 				X2(Parent, Parachain(2)),
 				Transact {
 					origin_type: OriginKind::SovereignAccount,
-					require_weight_at_most: 2_000_000_000,
+					require_weight_at_most: 10_000_000,
 					call: remark.encode().into(),
 				},
 			));
-			print_events::<yayoi::Runtime>("Yayoi Pumpkin");
 		});
 
 		YayoiMushroom::execute_with(|| {
-			print_events::<yayoi::Runtime>("Yayoi Mushroom");
+			use yayoi::{Event, System};
+			assert!(System::events()
+				.iter()
+				.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked(_, _)))));
+		});
+	}
+
+	#[test]
+	fn xcmp_through_a_parachain() {
+		use yayoi::{Call, PolkadotXcm, Runtime};
+
+		Network::reset();
+
+		// The message goes through: Pumpkin --> Mushroom --> Octopus
+		let remark = Call::System(frame_system::Call::<Runtime>::remark_with_event(
+			"Hello from Pumpkin!".as_bytes().to_vec(),
+		));
+		let send_xcm_to_octopus = Call::PolkadotXcm(pallet_xcm::Call::<Runtime>::send(
+			X2(Parent, Parachain(3)),
+			Transact {
+				origin_type: OriginKind::SovereignAccount,
+				require_weight_at_most: 10_000_000,
+				call: remark.encode().into(),
+			},
+		));
+		YayoiPumpkin::execute_with(|| {
+			assert_ok!(PolkadotXcm::send_xcm(
+				Null,
+				X2(Parent, Parachain(2)),
+				Transact {
+					origin_type: OriginKind::SovereignAccount,
+					require_weight_at_most: 100_000_000,
+					call: send_xcm_to_octopus.encode().into(),
+				},
+			));
+		});
+
+		YayoiMushroom::execute_with(|| {
+			use yayoi::{Event, System};
+			assert!(System::events()
+				.iter()
+				.any(|r| matches!(r.event, Event::PolkadotXcm(pallet_xcm::Event::Sent(_, _, _)))));
+		});
+
+		YayoiOctopus::execute_with(|| {
+			use yayoi::{Event, System};
+			// execution would fail, but good enough to check if the message is received
+			assert!(System::events()
+				.iter()
+				.any(|r| matches!(r.event, Event::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail(_, _)))));
 		});
 	}
 }

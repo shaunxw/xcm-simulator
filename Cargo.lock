@@ -8701,12 +8701,14 @@ dependencies = [
 name = "xcm-emulator-example"
 version = "0.1.0"
 dependencies = [
+ "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
  "frame-support",
  "frame-system",
  "kusama-runtime",
  "orml-tokens",
  "pallet-balances",
+ "pallet-xcm",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",

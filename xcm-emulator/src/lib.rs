@@ -178,6 +178,27 @@ macro_rules! __impl_ext_for_parachain {
 				= $crate::RefCell::new($new_ext);
 		}
 
+		impl $name {
+			fn prepare_for_xcmp() {
+				$ext_name.with(|v| {
+					v.borrow_mut().execute_with(|| {
+						use $crate::{Get, Hooks};
+						type ParachainSystem = $crate::cumulus_pallet_parachain_system::Pallet<$runtime>;
+
+						let block_number = $crate::frame_system::Pallet::<$runtime>::block_number();
+						let para_id = $crate::parachain_info::Pallet::<$runtime>::get();
+
+						let _ = ParachainSystem::set_validation_data(
+							<$origin>::none(),
+							_hrmp_channel_parachain_inherent_data(para_id.into(), 1),
+						);
+						// set `AnnouncedHrmpMessagesPerCandidate`
+						ParachainSystem::on_initialize(block_number);
+					})
+				});
+			}
+		}
+
 		impl $crate::TestExt for $name {
 			fn new_ext() -> $crate::TestExternalities {
 				$new_ext
@@ -189,23 +210,11 @@ macro_rules! __impl_ext_for_parachain {
 
 			fn execute_with<R>(execute: impl FnOnce() -> R) -> R {
 				use $crate::{Get, Hooks};
-
 				type ParachainSystem = $crate::cumulus_pallet_parachain_system::Pallet<$runtime>;
 
-				// prepare parachain system for messaging
 				$ext_name.with(|v| {
 					v.borrow_mut().execute_with(|| {
-						let block_number = $crate::frame_system::Pallet::<$runtime>::block_number();
 						let para_id = $crate::parachain_info::Pallet::<$runtime>::get();
-
-						// TODO: move setup to network initialization
-						let _ = ParachainSystem::set_validation_data(
-							<$origin>::none(),
-							_hrmp_channel_parachain_inherent_data(para_id.into(), 1),
-						);
-						// set `AnnouncedHrmpMessagesPerCandidate`
-						ParachainSystem::on_initialize(1);
-
 						let _ = ParachainSystem::set_validation_data(
 							<$origin>::none(),
 							_hrmp_channel_parachain_inherent_data(para_id.into(), 1),
@@ -218,8 +227,10 @@ macro_rules! __impl_ext_for_parachain {
 				// send messages if needed
 				$ext_name.with(|v| {
 					v.borrow_mut().execute_with(|| {
+						let block_number = $crate::frame_system::Pallet::<$runtime>::block_number();
+
 						// get messages
-						ParachainSystem::on_finalize(1);
+						ParachainSystem::on_finalize(block_number);
 						let collation_info = ParachainSystem::collect_collation_info();
 
 						// send upward messages
@@ -237,7 +248,7 @@ macro_rules! __impl_ext_for_parachain {
 						}
 
 						// clean messages
-						ParachainSystem::on_initialize(1);
+						ParachainSystem::on_initialize(block_number);
 					})
 				});
 
@@ -276,6 +287,8 @@ macro_rules! decl_test_network {
 
 				<$relay_chain>::reset_ext();
 				$( <$parachain>::reset_ext(); )*
+
+				$( <$parachain>::prepare_for_xcmp(); )*
 			}
 		}
 
