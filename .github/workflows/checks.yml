@@ -17,7 +17,7 @@ jobs:
       uses: actions-rs/toolchain@v1.0.6
       with:
         profile: minimal
-        toolchain: nightly-2021-03-04
+        toolchain: nightly-2021-05-31
         components: rustfmt
         target: wasm32-unknown-unknown
         default: true

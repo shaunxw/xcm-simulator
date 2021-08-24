@@ -25,7 +25,7 @@ pub fn encode_xcm(message: Xcm<()>, message_kind: MessageKind) -> Vec<u8> {
 	match message_kind {
 		MessageKind::Ump | MessageKind::Dmp => VersionedXcm::<()>::from(message).encode(),
 		MessageKind::Xcmp => {
-			let fmt = cumulus_pallet_xcmp_queue::XcmpMessageFormat::ConcatenatedVersionedXcm;
+			let fmt = polkadot_parachain::primitives::XcmpMessageFormat::ConcatenatedVersionedXcm;
 			let mut outbound = fmt.encode();
 
 			let encoded = VersionedXcm::<()>::from(message).encode();
