@@ -4,7 +4,7 @@ use sp_runtime::AccountId32;
 use xcm_emulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
 
 decl_test_relay_chain! {
-	pub struct Kusama {
+	pub struct KusamaNet {
 		Runtime = kusama_runtime::Runtime,
 		XcmConfig = kusama_runtime::XcmConfig,
 		new_ext = kusama_ext(),
@@ -37,7 +37,7 @@ decl_test_parachain! {
 
 decl_test_network! {
 	pub struct Network {
-		relay_chain = Kusama,
+		relay_chain = KusamaNet,
 		parachains = vec![
 			(1, YayoiPumpkin),
 			(2, YayoiMushroom),
@@ -94,7 +94,6 @@ fn default_parachains_host_configuration(
 		ump_service_total_weight: 4 * 1_000_000_000,
 		max_upward_message_size: 1024 * 1024,
 		max_upward_message_num_per_candidate: 5,
-		hrmp_open_request_ttl: 5,
 		hrmp_sender_deposit: 0,
 		hrmp_recipient_deposit: 0,
 		hrmp_channel_max_capacity: 8,
@@ -147,14 +146,7 @@ mod tests {
 	use cumulus_primitives_core::ParaId;
 	use frame_support::{assert_ok, traits::Currency};
 	use sp_runtime::traits::AccountIdConversion;
-	use xcm::v0::{
-		Junction::{Parachain, Parent},
-		MultiAsset::*,
-		MultiLocation::*,
-		Order::BuyExecution,
-		OriginKind,
-		Xcm::*,
-	};
+	use xcm::{latest::prelude::*, VersionedMultiLocation, VersionedXcm};
 	use xcm_emulator::TestExt;
 
 	#[test]
@@ -164,9 +156,9 @@ mod tests {
 		let remark = yayoi::Call::System(frame_system::Call::<yayoi::Runtime>::remark_with_event(
 			"Hello from Kusama!".as_bytes().to_vec(),
 		));
-		Kusama::execute_with(|| {
+		KusamaNet::execute_with(|| {
 			assert_ok!(kusama_runtime::XcmPallet::send_xcm(
-				Null,
+				Here,
 				Parachain(1).into(),
 				Transact {
 					origin_type: OriginKind::SovereignAccount,
@@ -192,7 +184,7 @@ mod tests {
 	fn ump() {
 		Network::reset();
 
-		Kusama::execute_with(|| {
+		KusamaNet::execute_with(|| {
 			let _ = kusama_runtime::Balances::deposit_creating(&ParaId::from(1).into_account(), 1_000_000_000_000);
 		});
 
@@ -201,19 +193,16 @@ mod tests {
 		));
 		YayoiPumpkin::execute_with(|| {
 			assert_ok!(yayoi::PolkadotXcm::send_xcm(
-				Null,
-				Parent.into(),
+				Here,
+				MultiLocation::parent(),
 				WithdrawAsset {
-					assets: vec![ConcreteFungible {
-						id: Null,
-						amount: 1_000_000_000_000
-					}],
+					assets: (Here, 1_000_000_000_000).into(),
 					effects: vec![BuyExecution {
-						fees: All,
+						fees: (Here, 1_000_000_000_000).into(),
 						weight: 10_000_000,
 						debt: 10_000_000,
 						halt_on_error: true,
-						xcm: vec![Transact {
+						instructions: vec![Transact {
 							origin_type: OriginKind::SovereignAccount,
 							require_weight_at_most: 1_000_000_000,
 							call: remark.encode().into(),
@@ -223,7 +212,7 @@ mod tests {
 			));
 		});
 
-		Kusama::execute_with(|| {
+		KusamaNet::execute_with(|| {
 			use kusama_runtime::{Event, System};
 			assert!(System::events()
 				.iter()
@@ -240,8 +229,8 @@ mod tests {
 		));
 		YayoiPumpkin::execute_with(|| {
 			assert_ok!(yayoi::PolkadotXcm::send_xcm(
-				Null,
-				X2(Parent, Parachain(2)),
+				Here,
+				MultiLocation::new(1, X1(Parachain(2))),
 				Transact {
 					origin_type: OriginKind::SovereignAccount,
 					require_weight_at_most: 10_000_000,
@@ -272,17 +261,17 @@ mod tests {
 			"Hello from Pumpkin!".as_bytes().to_vec(),
 		));
 		let send_xcm_to_octopus = Call::PolkadotXcm(pallet_xcm::Call::<Runtime>::send(
-			X2(Parent, Parachain(3)),
-			Transact {
+			Box::new(VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(3))))),
+			Box::new(VersionedXcm::V1(Transact {
 				origin_type: OriginKind::SovereignAccount,
 				require_weight_at_most: 10_000_000,
 				call: remark.encode().into(),
-			},
+			})),
 		));
 		YayoiPumpkin::execute_with(|| {
 			assert_ok!(PolkadotXcm::send_xcm(
-				Null,
-				X2(Parent, Parachain(2)),
+				Here,
+				MultiLocation::new(1, X1(Parachain(2))),
 				Transact {
 					origin_type: OriginKind::SovereignAccount,
 					require_weight_at_most: 100_000_000,
