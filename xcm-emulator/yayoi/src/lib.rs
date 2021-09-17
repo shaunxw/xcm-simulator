@@ -184,7 +184,8 @@ impl Convert<AccountId, MultiLocation> for AccountIdToMultiLocation {
 		X1(Junction::AccountId32 {
 			network: NetworkId::Any,
 			id: account.into(),
-		}).into()
+		})
+		.into()
 	}
 }
 
