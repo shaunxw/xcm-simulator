@@ -13,11 +13,7 @@ use sp_runtime::{
 
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain::primitives::Sibling;
-use xcm::v0::{
-	Junction::{self, Parachain, Parent},
-	MultiLocation::{self, X1},
-	NetworkId,
-};
+use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, EnsureXcmOrigin, FixedWeightBounds, LocationInverter,
 	ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
@@ -80,7 +76,7 @@ impl pallet_balances::Config for Runtime {
 impl parachain_info::Config for Runtime {}
 
 parameter_types! {
-	pub const RelayLocation: MultiLocation = MultiLocation::X1(Parent);
+	pub const RelayLocation: MultiLocation = MultiLocation::parent();
 	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
 	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
@@ -110,7 +106,7 @@ pub type LocalAssetTransactor = ();
 /// the right message queues.
 pub type XcmRouter = (
 	// Two routers - use UMP to communicate with the relay chain:
-	cumulus_primitives_utility::ParentAsUmp<ParachainSystem>,
+	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, ()>,
 	// ..and XCMP to communicate with the sibling chains.
 	XcmpQueue,
 );
@@ -130,6 +126,7 @@ impl Config for XcmConfig {
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
 	type Trader = ();
 	type ResponseHandler = ();
+	type SubscriptionService = PolkadotXcm;
 }
 
 parameter_types! {
@@ -152,6 +149,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type Event = Event;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
+	type VersionWrapper = ();
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -186,7 +184,7 @@ impl Convert<AccountId, MultiLocation> for AccountIdToMultiLocation {
 		X1(Junction::AccountId32 {
 			network: NetworkId::Any,
 			id: account.into(),
-		})
+		}).into()
 	}
 }
 
