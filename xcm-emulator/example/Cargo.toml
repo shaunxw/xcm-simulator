@@ -7,24 +7,24 @@ edition = "2018"
 
 [dependencies]
 serde = { version = "1.0.124", optional = true }
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
+codec = { package = "parity-scale-codec", version = "2.3.1", default-features = false }
 
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10" }
-frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10" }
-pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10" }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10" }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11" }
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11" }
 
-cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.10" }
-cumulus-pallet-xcmp-queue = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.10" }
-parachain-info = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.10" }
+cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.11" }
+cumulus-pallet-xcmp-queue = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.11" }
+parachain-info = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.11" }
 
-xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.10" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.10" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.10" }
-polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.10" }
-kusama-runtime = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.10" }
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.10" }
+xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.11" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.11" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.11" }
+polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.11" }
+kusama-runtime = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.11" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.11" }
 
 xcm-emulator = { path = "../" }
 yayoi = { path = "../yayoi" }
