@@ -157,7 +157,10 @@ mod tests {
 			remark: "Hello from Kusama!".as_bytes().to_vec(),
 		});
 		KusamaNet::execute_with(|| {
-			assert_ok!(kusama_runtime::XcmPallet::force_default_xcm_version(kusama_runtime::Origin::root(), Some(0)));
+			assert_ok!(kusama_runtime::XcmPallet::force_default_xcm_version(
+				kusama_runtime::Origin::root(),
+				Some(0)
+			));
 			assert_ok!(kusama_runtime::XcmPallet::send_xcm(
 				Here,
 				Parachain(1),
