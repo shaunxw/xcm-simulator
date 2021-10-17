@@ -153,18 +153,22 @@ mod tests {
 	fn dmp() {
 		Network::reset();
 
-		let remark = yayoi::Call::System(frame_system::Call::<yayoi::Runtime>::remark_with_event(
-			"Hello from Kusama!".as_bytes().to_vec(),
-		));
+		let remark = yayoi::Call::System(frame_system::Call::<yayoi::Runtime>::remark_with_event {
+			remark: "Hello from Kusama!".as_bytes().to_vec(),
+		});
 		KusamaNet::execute_with(|| {
+			assert_ok!(kusama_runtime::XcmPallet::force_default_xcm_version(
+				kusama_runtime::Origin::root(),
+				Some(0)
+			));
 			assert_ok!(kusama_runtime::XcmPallet::send_xcm(
 				Here,
-				Parachain(1).into(),
-				Transact {
+				Parachain(1),
+				Xcm(vec![Transact {
 					origin_type: OriginKind::SovereignAccount,
-					require_weight_at_most: 10_000_000,
+					require_weight_at_most: INITIAL_BALANCE as u64,
 					call: remark.encode().into(),
-				}
+				}]),
 			));
 		});
 
@@ -172,11 +176,9 @@ mod tests {
 			use yayoi::{Event, System};
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
 
-			// TODO: fix
-			// assert!(System::events()
-			// 	.iter()
-			// 	.any(|r| matches!(r.event,
-			// Event::System(frame_system::Event::Remarked(_, _)))));
+			assert!(System::events()
+				.iter()
+				.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked(_, _)))));
 		});
 	}
 
@@ -188,27 +190,18 @@ mod tests {
 			let _ = kusama_runtime::Balances::deposit_creating(&ParaId::from(1).into_account(), 1_000_000_000_000);
 		});
 
-		let remark = kusama_runtime::Call::System(frame_system::Call::<kusama_runtime::Runtime>::remark_with_event(
-			"Hello from Pumpkin!".as_bytes().to_vec(),
-		));
+		let remark = kusama_runtime::Call::System(frame_system::Call::<kusama_runtime::Runtime>::remark_with_event {
+			remark: "Hello from Pumpkin!".as_bytes().to_vec(),
+		});
 		YayoiPumpkin::execute_with(|| {
 			assert_ok!(yayoi::PolkadotXcm::send_xcm(
 				Here,
-				MultiLocation::parent(),
-				WithdrawAsset {
-					assets: (Here, 1_000_000_000_000).into(),
-					effects: vec![BuyExecution {
-						fees: (Here, 1_000_000_000_000).into(),
-						weight: 10_000_000,
-						debt: 10_000_000,
-						halt_on_error: true,
-						instructions: vec![Transact {
-							origin_type: OriginKind::SovereignAccount,
-							require_weight_at_most: 1_000_000_000,
-							call: remark.encode().into(),
-						}],
-					}]
-				}
+				Parent,
+				Xcm(vec![Transact {
+					origin_type: OriginKind::SovereignAccount,
+					require_weight_at_most: INITIAL_BALANCE as u64,
+					call: remark.encode().into(),
+				}]),
 			));
 		});
 
@@ -224,29 +217,28 @@ mod tests {
 	fn xcmp() {
 		Network::reset();
 
-		let remark = yayoi::Call::System(frame_system::Call::<yayoi::Runtime>::remark_with_event(
-			"Hello from Pumpkin!".as_bytes().to_vec(),
-		));
+		let remark = yayoi::Call::System(frame_system::Call::<yayoi::Runtime>::remark_with_event {
+			remark: "Hello from Pumpkin!".as_bytes().to_vec(),
+		});
 		YayoiPumpkin::execute_with(|| {
 			assert_ok!(yayoi::PolkadotXcm::send_xcm(
 				Here,
 				MultiLocation::new(1, X1(Parachain(2))),
-				Transact {
+				Xcm(vec![Transact {
 					origin_type: OriginKind::SovereignAccount,
 					require_weight_at_most: 10_000_000,
 					call: remark.encode().into(),
-				},
+				}]),
 			));
 		});
 
 		YayoiMushroom::execute_with(|| {
 			use yayoi::{Event, System};
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
-			// TODO: fix
-			// assert!(System::events()
-			// 	.iter()
-			// 	.any(|r| matches!(r.event,
-			// Event::System(frame_system::Event::Remarked(_, _)))));
+
+			assert!(System::events()
+				.iter()
+				.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked(_, _)))));
 		});
 	}
 
@@ -257,49 +249,46 @@ mod tests {
 		Network::reset();
 
 		// The message goes through: Pumpkin --> Mushroom --> Octopus
-		let remark = Call::System(frame_system::Call::<Runtime>::remark_with_event(
-			"Hello from Pumpkin!".as_bytes().to_vec(),
-		));
-		let send_xcm_to_octopus = Call::PolkadotXcm(pallet_xcm::Call::<Runtime>::send(
-			Box::new(VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(3))))),
-			Box::new(VersionedXcm::V1(Transact {
+		let remark = Call::System(frame_system::Call::<Runtime>::remark_with_event {
+			remark: "Hello from Pumpkin!".as_bytes().to_vec(),
+		});
+		let send_xcm_to_octopus = Call::PolkadotXcm(pallet_xcm::Call::<Runtime>::send {
+			dest: Box::new(VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(3))))),
+			message: Box::new(VersionedXcm::V2(Xcm(vec![Transact {
 				origin_type: OriginKind::SovereignAccount,
 				require_weight_at_most: 10_000_000,
 				call: remark.encode().into(),
-			})),
-		));
+			}]))),
+		});
 		YayoiPumpkin::execute_with(|| {
 			assert_ok!(PolkadotXcm::send_xcm(
 				Here,
 				MultiLocation::new(1, X1(Parachain(2))),
-				Transact {
+				Xcm(vec![Transact {
 					origin_type: OriginKind::SovereignAccount,
 					require_weight_at_most: 100_000_000,
 					call: send_xcm_to_octopus.encode().into(),
-				},
+				}]),
 			));
 		});
 
 		YayoiMushroom::execute_with(|| {
 			use yayoi::{Event, System};
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
-			// TODO: fix
-			// assert!(System::events()
-			// 	.iter()
-			// 	.any(|r| matches!(r.event,
-			// Event::PolkadotXcm(pallet_xcm::Event::Sent(_, _, _)))));
+
+			assert!(System::events()
+				.iter()
+				.any(|r| matches!(r.event, Event::PolkadotXcm(pallet_xcm::Event::Sent(_, _, _)))));
 		});
 
 		YayoiOctopus::execute_with(|| {
 			use yayoi::{Event, System};
 			// execution would fail, but good enough to check if the message is received
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
-			// TODO: fix
-			// assert!(System::events()
-			// 	.iter()
-			// 	.any(|r| matches!(r.event,
-			// Event::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail(_,
-			// _)))));
+
+			assert!(System::events()
+				.iter()
+				.any(|r| matches!(r.event, Event::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail(_, _)))));
 		});
 	}
 }
