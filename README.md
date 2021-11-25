@@ -8,11 +8,11 @@ Different level of simulation are provided: `xcm-simulator` and `xcm-emulator`.
 
 **UPDATE**: `xcm-simulator` has been merged into [Polkadot repo](https://github.com/paritytech/polkadot/tree/master/xcm/xcm-simulator), and not actively maintained here anymore.
 
-`xcm-simulator` uses *mock* relay chain and parachain runtime. It allows minimum runtime modules for XCM testing and playground, and thus has less compiling overhead depending on the specific config. Typical use case is unit tests of XCM related pallets.
+`xcm-simulator` uses low-level *mock* relay chain and parachain runtime. It allows minimum runtime modules for XCM testing and playground, and thus has less compiling overhead depending on the specific config. Typical use case is unit tests of XCM related pallets.
 
 ## xcm-emulator
 
-`xcm-emulator` uses production relay chain and parachain runtime. Users could plug in Kusama, Statemine, and Karura runtime etc. With up-to-date chain specs, it's able to verify if specific XCM messages work in live networks.
+`xcm-emulator` uses production relay chain and Cumulus based parachain runtime. Users could plug in Kusama, Statemine, and Karura runtime etc. With up-to-date chain specs, it's able to verify if specific XCM messages work in live networks.
 
 ### Limitations
 
