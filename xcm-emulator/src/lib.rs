@@ -88,7 +88,6 @@ macro_rules! decl_test_parachain {
 				use $crate::{TestExt, XcmpMessageHandler};
 
 				$name::execute_with(|| {
-					// $crate::cumulus_pallet_xcmp_queue::Pallet::<$runtime>::handle_xcmp_messages(iter, max_weight)
 					<$xcmp_message_handler>::handle_xcmp_messages(iter, max_weight)
 				})
 			}
@@ -102,7 +101,6 @@ macro_rules! decl_test_parachain {
 				use $crate::{DmpMessageHandler, TestExt};
 
 				$name::execute_with(|| {
-					// $crate::cumulus_pallet_dmp_queue::Pallet::<$runtime>::handle_dmp_messages(iter, max_weight)
 					<$dmp_message_handler>::handle_dmp_messages(iter, max_weight)
 				})
 			}
