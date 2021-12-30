@@ -15,6 +15,8 @@ decl_test_parachain! {
 	pub struct YayoiPumpkin {
 		Runtime = yayoi::Runtime,
 		Origin = yayoi::Origin,
+		XcmpMessageHandler = yayoi::XcmpQueue,
+		DmpMessageHandler = yayoi::DmpQueue,
 		new_ext = yayoi_ext(1),
 	}
 }
@@ -23,6 +25,8 @@ decl_test_parachain! {
 	pub struct YayoiMushroom {
 		Runtime = yayoi::Runtime,
 		Origin = yayoi::Origin,
+		XcmpMessageHandler = yayoi::XcmpQueue,
+		DmpMessageHandler = yayoi::DmpQueue,
 		new_ext = yayoi_ext(2),
 	}
 }
@@ -31,6 +35,8 @@ decl_test_parachain! {
 	pub struct YayoiOctopus {
 		Runtime = yayoi::Runtime,
 		Origin = yayoi::Origin,
+		XcmpMessageHandler = yayoi::XcmpQueue,
+		DmpMessageHandler = yayoi::DmpQueue,
 		new_ext = yayoi_ext(3),
 	}
 }
