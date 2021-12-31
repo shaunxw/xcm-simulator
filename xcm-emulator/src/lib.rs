@@ -87,9 +87,7 @@ macro_rules! decl_test_parachain {
 			) -> $crate::Weight {
 				use $crate::{TestExt, XcmpMessageHandler};
 
-				$name::execute_with(|| {
-					<$xcmp_message_handler>::handle_xcmp_messages(iter, max_weight)
-				})
+				$name::execute_with(|| <$xcmp_message_handler>::handle_xcmp_messages(iter, max_weight))
 			}
 		}
 
@@ -100,9 +98,7 @@ macro_rules! decl_test_parachain {
 			) -> $crate::Weight {
 				use $crate::{DmpMessageHandler, TestExt};
 
-				$name::execute_with(|| {
-					<$dmp_message_handler>::handle_dmp_messages(iter, max_weight)
-				})
+				$name::execute_with(|| <$dmp_message_handler>::handle_dmp_messages(iter, max_weight))
 			}
 		}
 	};
