@@ -85,8 +85,9 @@ fn default_parachains_host_configuration(
 	use polkadot_primitives::v1::{MAX_CODE_SIZE, MAX_POV_SIZE};
 
 	polkadot_runtime_parachains::configuration::HostConfiguration {
-		validation_upgrade_frequency: 1u32,
-		validation_upgrade_delay: 1,
+		minimum_validation_upgrade_delay: 5,
+		validation_upgrade_cooldown: 10u32,
+		validation_upgrade_delay: 10,
 		code_retention_period: 1200,
 		max_code_size: MAX_CODE_SIZE,
 		max_pov_size: MAX_POV_SIZE,
@@ -184,7 +185,10 @@ mod tests {
 
 			assert!(System::events()
 				.iter()
-				.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked(_, _)))));
+				.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked{
+					sender:  _,
+					hash: _
+				}))));
 		});
 	}
 
@@ -215,7 +219,10 @@ mod tests {
 			use kusama_runtime::{Event, System};
 			assert!(System::events()
 				.iter()
-				.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked(_, _)))));
+				.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked{
+					sender:  _,
+					hash: _
+				}))));
 		});
 	}
 
@@ -244,7 +251,10 @@ mod tests {
 
 			assert!(System::events()
 				.iter()
-				.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked(_, _)))));
+				.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked{
+					sender:  _,
+					hash: _
+				}))));
 		});
 	}
 
