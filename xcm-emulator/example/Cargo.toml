@@ -3,7 +3,7 @@ name = "xcm-emulator-example"
 version = "0.1.0"
 license = "Apache-2.0"
 authors = ["Shaun Wang <spxwang@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 serde = { version = "1.0.124", optional = true }
