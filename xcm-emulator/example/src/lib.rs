@@ -183,12 +183,10 @@ mod tests {
 			use yayoi::{Event, System};
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
 
-			assert!(System::events()
-				.iter()
-				.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked{
-					sender:  _,
-					hash: _
-				}))));
+			assert!(System::events().iter().any(|r| matches!(
+				r.event,
+				Event::System(frame_system::Event::Remarked { sender: _, hash: _ })
+			)));
 		});
 	}
 
@@ -217,12 +215,10 @@ mod tests {
 
 		KusamaNet::execute_with(|| {
 			use kusama_runtime::{Event, System};
-			assert!(System::events()
-				.iter()
-				.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked{
-					sender:  _,
-					hash: _
-				}))));
+			assert!(System::events().iter().any(|r| matches!(
+				r.event,
+				Event::System(frame_system::Event::Remarked { sender: _, hash: _ })
+			)));
 		});
 	}
 
@@ -249,12 +245,10 @@ mod tests {
 			use yayoi::{Event, System};
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
 
-			assert!(System::events()
-				.iter()
-				.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked{
-					sender:  _,
-					hash: _
-				}))));
+			assert!(System::events().iter().any(|r| matches!(
+				r.event,
+				Event::System(frame_system::Event::Remarked { sender: _, hash: _ })
+			)));
 		});
 	}
 

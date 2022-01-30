@@ -228,7 +228,13 @@ macro_rules! __impl_ext_for_parachain {
 						use sp_runtime::traits::Header as HeaderT;
 
 						let block_number = $crate::frame_system::Pallet::<$runtime>::block_number();
-						let mock_header = HeaderT::new(0, Default::default(), Default::default(), Default::default(), Default::default());
+						let mock_header = HeaderT::new(
+							0,
+							Default::default(),
+							Default::default(),
+							Default::default(),
+							Default::default(),
+						);
 
 						// get messages
 						ParachainSystem::on_finalize(block_number);
