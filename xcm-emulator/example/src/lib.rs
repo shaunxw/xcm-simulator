@@ -6,7 +6,7 @@ use xcm_emulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain
 decl_test_relay_chain! {
 	pub struct KusamaNet {
 		Runtime = kusama_runtime::Runtime,
-		XcmConfig = kusama_runtime::XcmConfig,
+		XcmConfig = kusama_runtime::xcm_config::XcmConfig,
 		new_ext = kusama_ext(),
 	}
 }
@@ -85,8 +85,9 @@ fn default_parachains_host_configuration(
 	use polkadot_primitives::v1::{MAX_CODE_SIZE, MAX_POV_SIZE};
 
 	polkadot_runtime_parachains::configuration::HostConfiguration {
-		validation_upgrade_frequency: 1u32,
-		validation_upgrade_delay: 1,
+		minimum_validation_upgrade_delay: 5,
+		validation_upgrade_cooldown: 10u32,
+		validation_upgrade_delay: 10,
 		code_retention_period: 1200,
 		max_code_size: MAX_CODE_SIZE,
 		max_pov_size: MAX_POV_SIZE,
@@ -182,9 +183,10 @@ mod tests {
 			use yayoi::{Event, System};
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
 
-			assert!(System::events()
-				.iter()
-				.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked(_, _)))));
+			assert!(System::events().iter().any(|r| matches!(
+				r.event,
+				Event::System(frame_system::Event::Remarked { sender: _, hash: _ })
+			)));
 		});
 	}
 
@@ -213,9 +215,10 @@ mod tests {
 
 		KusamaNet::execute_with(|| {
 			use kusama_runtime::{Event, System};
-			assert!(System::events()
-				.iter()
-				.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked(_, _)))));
+			assert!(System::events().iter().any(|r| matches!(
+				r.event,
+				Event::System(frame_system::Event::Remarked { sender: _, hash: _ })
+			)));
 		});
 	}
 
@@ -242,9 +245,10 @@ mod tests {
 			use yayoi::{Event, System};
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
 
-			assert!(System::events()
-				.iter()
-				.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked(_, _)))));
+			assert!(System::events().iter().any(|r| matches!(
+				r.event,
+				Event::System(frame_system::Event::Remarked { sender: _, hash: _ })
+			)));
 		});
 	}
 

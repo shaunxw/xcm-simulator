@@ -53,6 +53,7 @@ impl frame_system::Config for Runtime {
 	type SystemWeightInfo = ();
 	type SS58Prefix = ();
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -139,7 +140,7 @@ parameter_types! {
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type Event = Event;
-	type OnValidationData = ();
+	type OnSystemEvent = ();
 	type SelfParaId = ParachainInfo;
 	type DmpMessageHandler = DmpQueue;
 	type ReservedDmpWeight = ReservedDmpWeight;
@@ -153,6 +154,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
 	type VersionWrapper = ();
+	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {

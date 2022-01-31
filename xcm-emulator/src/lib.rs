@@ -134,7 +134,7 @@ macro_rules! __impl_ext_for_relay_chain {
 				// send messages if needed
 				$ext_name.with(|v| {
 					v.borrow_mut().execute_with(|| {
-						use $crate::polkadot_primitives::v1::runtime_decl_for_ParachainHost::ParachainHost;
+						use $crate::polkadot_primitives::v2::runtime_decl_for_ParachainHost::ParachainHost;
 
 						//TODO: mark sent count & filter out sent msg
 						for para_id in _para_ids() {
@@ -225,11 +225,20 @@ macro_rules! __impl_ext_for_parachain {
 				// send messages if needed
 				$ext_name.with(|v| {
 					v.borrow_mut().execute_with(|| {
+						use sp_runtime::traits::Header as HeaderT;
+
 						let block_number = $crate::frame_system::Pallet::<$runtime>::block_number();
+						let mock_header = HeaderT::new(
+							0,
+							Default::default(),
+							Default::default(),
+							Default::default(),
+							Default::default(),
+						);
 
 						// get messages
 						ParachainSystem::on_finalize(block_number);
-						let collation_info = ParachainSystem::collect_collation_info();
+						let collation_info = ParachainSystem::collect_collation_info(&mock_header);
 
 						// send upward messages
 						let para_id = $crate::parachain_info::Pallet::<$runtime>::get();
