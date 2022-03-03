@@ -296,12 +296,15 @@ macro_rules! decl_test_network {
 
 		impl $name {
 			pub fn reset() {
-				use $crate::TestExt;
+				use $crate::{TestExt, VecDeque};
 
 				<$relay_chain>::reset_ext();
 				$( <$parachain>::reset_ext(); )*
 
 				$( <$parachain>::prepare_for_xcmp(); )*
+
+				$crate::DOWNWARD_MESSAGES.with(|b| b.replace(VecDeque::new()));
+				$crate::DOWNWARDED_MESSAGES.with(|b| b.replace(VecDeque::new()));
 			}
 		}
 
