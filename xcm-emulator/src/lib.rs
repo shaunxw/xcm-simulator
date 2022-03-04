@@ -273,8 +273,8 @@ thread_local! {
 	pub static DOWNWARD_MESSAGES: RefCell<VecDeque<(u32, Vec<(RelayBlockNumber, Vec<u8>)>)>>
 		= RefCell::new(VecDeque::new());
 		#[allow(clippy::type_complexity)]
-	/// Downwarded messages that was sent to parachains, each message is: `(to_para_id, relay_block_number, Vec<u8>)`
-	pub static DOWNWARDED_MESSAGES: RefCell<VecDeque<(u32, RelayBlockNumber, Vec<u8>)>>
+	/// Downward messages that already processed by parachains, each message is: `(to_para_id, relay_block_number, Vec<u8>)`
+	pub static DMP_DONE: RefCell<VecDeque<(u32, RelayBlockNumber, Vec<u8>)>>
 		= RefCell::new(VecDeque::new());
 	/// Horizontal messages, each message is: `(to_para_id, [(from_para_id, relay_block_number, msg)])`
 	#[allow(clippy::type_complexity)]
@@ -304,7 +304,7 @@ macro_rules! decl_test_network {
 				$( <$parachain>::prepare_for_xcmp(); )*
 
 				$crate::DOWNWARD_MESSAGES.with(|b| b.replace(VecDeque::new()));
-				$crate::DOWNWARDED_MESSAGES.with(|b| b.replace(VecDeque::new()));
+				$crate::DMP_DONE.with(|b| b.replace(VecDeque::new()));
 			}
 		}
 
@@ -328,19 +328,28 @@ macro_rules! decl_test_network {
 
 		fn _process_downward_messages() {
 			use $crate::DmpMessageHandler;
+			use polkadot_parachain::primitives::RelayChainBlockNumber;
 
 			while let Some((to_para_id, messages))
 				= $crate::DOWNWARD_MESSAGES.with(|b| b.borrow_mut().pop_front()) {
 				match to_para_id {
 					$(
 						$para_id => {
-							let msg_clone = messages.clone();
-							let msgs = messages.into_iter().filter(|m| {
-								!$crate::DOWNWARDED_MESSAGES.with(|b| b.borrow_mut().contains(&(to_para_id, m.0, m.1.clone())))
-							});
-							<$parachain>::handle_dmp_messages(msgs, $crate::Weight::max_value());
-							for m in msg_clone {
-								$crate::DOWNWARDED_MESSAGES.with(|b| b.borrow_mut().push_back((to_para_id, m.0, m.1)));
+							let mut msg_dedup: Vec<(RelayChainBlockNumber, Vec<u8>)> = Vec::new();
+							for m in messages {
+								msg_dedup.push((m.0, m.1.clone()));
+							}
+							msg_dedup.dedup();
+
+							let msgs = msg_dedup.clone().into_iter().filter(|m| {
+								!$crate::DMP_DONE.with(|b| b.borrow_mut().contains(&(to_para_id, m.0, m.1.clone())))
+							}).collect::<Vec<(RelayChainBlockNumber, Vec<u8>)>>();
+							if msgs.len() != 0 {
+								<$parachain>::handle_dmp_messages(msgs.clone().into_iter(), $crate::Weight::max_value());
+								for m in msgs {
+									// println!("done: {}: {}, {:?}", to_para_id, m.0, m.1.clone());
+									$crate::DMP_DONE.with(|b| b.borrow_mut().push_back((to_para_id, m.0, m.1)));
+								}
 							}
 						},
 					)*
