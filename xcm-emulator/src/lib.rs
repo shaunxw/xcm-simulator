@@ -347,7 +347,6 @@ macro_rules! decl_test_network {
 							if msgs.len() != 0 {
 								<$parachain>::handle_dmp_messages(msgs.clone().into_iter(), $crate::Weight::max_value());
 								for m in msgs {
-									// println!("done: {}: {}, {:?}", to_para_id, m.0, m.1.clone());
 									$crate::DMP_DONE.with(|b| b.borrow_mut().push_back((to_para_id, m.0, m.1)));
 								}
 							}
