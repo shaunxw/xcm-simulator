@@ -406,7 +406,7 @@ macro_rules! decl_test_network {
 			para_id: u32,
 			relay_parent_number: u32,
 		) -> $crate::ParachainInherentData {
-			use $crate::cumulus_primitives_core::{relay_chain::v1::HrmpChannelId, AbridgedHrmpChannel};
+			use $crate::cumulus_primitives_core::{relay_chain::v2::HrmpChannelId, AbridgedHrmpChannel};
 
 			let mut sproof = $crate::RelayStateSproofBuilder::default();
 			sproof.para_id = para_id.into();
