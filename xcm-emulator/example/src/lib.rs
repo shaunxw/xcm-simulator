@@ -1,5 +1,6 @@
 use frame_support::traits::GenesisBuild;
 use sp_runtime::AccountId32;
+use polkadot_primitives::runtime_api::runtime_decl_for_ParachainHost::ParachainHost;
 
 use xcm_emulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
 
