@@ -195,7 +195,10 @@ mod tests {
 		Network::reset();
 
 		KusamaNet::execute_with(|| {
-			let _ = kusama_runtime::Balances::deposit_creating(&ParaId::from(1).into_account_truncating(), 1_000_000_000_000);
+			let _ = kusama_runtime::Balances::deposit_creating(
+				&ParaId::from(1).into_account_truncating(),
+				1_000_000_000_000,
+			);
 		});
 
 		let remark = kusama_runtime::Call::System(frame_system::Call::<kusama_runtime::Runtime>::remark_with_event {
