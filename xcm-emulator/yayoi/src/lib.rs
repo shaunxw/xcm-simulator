@@ -1,18 +1,18 @@
+use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{Everything, Nothing},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 use frame_system::EnsureRoot;
+use pallet_xcm::XcmPassthrough;
+use polkadot_parachain::primitives::Sibling;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
 	traits::{Convert, IdentityLookup},
 	AccountId32,
 };
-
-use pallet_xcm::XcmPassthrough;
-use polkadot_parachain::primitives::Sibling;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, EnsureXcmOrigin, FixedWeightBounds, LocationInverter, ParentIsPreset,
@@ -147,6 +147,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type OutboundXcmpMessageSource = XcmpQueue;
 	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
+	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
