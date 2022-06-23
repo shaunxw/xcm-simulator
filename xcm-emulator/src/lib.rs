@@ -210,13 +210,20 @@ macro_rules! __impl_ext_for_parachain {
 				use $crate::{Get, Hooks};
 				type ParachainSystem = $crate::cumulus_pallet_parachain_system::Pallet<$runtime>;
 
+				$crate::GLOBAL_RELAY.with(|v| {
+					*v.borrow_mut() += 1;
+				});
+
 				$ext_name.with(|v| {
 					v.borrow_mut().execute_with(|| {
 						let para_id = $crate::parachain_info::Pallet::<$runtime>::get();
-						let _ = ParachainSystem::set_validation_data(
-							<$origin>::none(),
-							_hrmp_channel_parachain_inherent_data(para_id.into(), 1),
-						);
+						$crate::GLOBAL_RELAY.with(|v| {
+							let relay_block = *v.borrow();
+							let _ = ParachainSystem::set_validation_data(
+								<$origin>::none(),
+								_hrmp_channel_parachain_inherent_data(para_id.into(), relay_block),
+							);
+						});
 					})
 				});
 
@@ -248,10 +255,13 @@ macro_rules! __impl_ext_for_parachain {
 
 						// send horizontal messages
 						for msg in collation_info.horizontal_messages {
-							_Messenger::send_horizontal_messages(
-								msg.recipient.into(),
-								vec![(para_id.into(), 1, msg.data)].into_iter(),
-							);
+							$crate::GLOBAL_RELAY.with(|v| {
+								let relay_block = *v.borrow();
+								_Messenger::send_horizontal_messages(
+									msg.recipient.into(),
+									vec![(para_id.into(), relay_block, msg.data)].into_iter(),
+								);
+							});
 						}
 
 						// clean messages
@@ -282,6 +292,8 @@ thread_local! {
 		= RefCell::new(VecDeque::new());
 	/// Upward messages, each message is: `(from_para_id, msg)
 	pub static UPWARD_MESSAGES: RefCell<VecDeque<(u32, Vec<u8>)>> = RefCell::new(VecDeque::new());
+	/// Global incremental relay chain block number
+	pub static GLOBAL_RELAY: RefCell<u32> = RefCell::new(1);
 }
 
 #[macro_export]
