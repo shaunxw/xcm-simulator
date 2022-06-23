@@ -301,7 +301,7 @@ mod tests {
 
 			assert!(System::events()
 				.iter()
-				.any(|r| matches!(r.event, Event::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail(_, _)))));
+				.any(|r| matches!(r.event, Event::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail{..}))));
 		});
 	}
 
