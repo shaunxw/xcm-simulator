@@ -97,7 +97,7 @@ pub type XcmOriginToCallOrigin = (
 );
 
 parameter_types! {
-	pub const UnitWeightCost: Weight = 10;
+	pub const UnitWeightCost: u64 = 10;
 	pub const MaxInstructions: u32 = 100;
 }
 
@@ -133,8 +133,8 @@ impl Config for XcmConfig {
 }
 
 parameter_types! {
-	pub const ReservedXcmpWeight: Weight = WEIGHT_PER_SECOND / 4;
-	pub const ReservedDmpWeight: Weight = WEIGHT_PER_SECOND / 4;
+	pub ReservedXcmpWeight: Weight = WEIGHT_PER_SECOND / 4;
+	pub ReservedDmpWeight: Weight = WEIGHT_PER_SECOND / 4;
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
