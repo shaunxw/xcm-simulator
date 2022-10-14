@@ -1,5 +1,4 @@
 use frame_support::{pallet_prelude::Weight, traits::GenesisBuild};
-use num_traits::bounds::UpperBounded;
 use sp_runtime::AccountId32;
 
 use xcm_emulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
