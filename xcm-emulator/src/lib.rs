@@ -6,9 +6,9 @@ pub use frame_support::{
 	weights::Weight,
 };
 pub use frame_system;
+pub use sp_arithmetic::traits::Bounded;
 pub use sp_io::TestExternalities;
 pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, marker::PhantomData};
-pub use sp_arithmetic::traits::Bounded;
 
 pub use cumulus_pallet_dmp_queue;
 pub use cumulus_pallet_parachain_system;
