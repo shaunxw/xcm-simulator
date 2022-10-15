@@ -6,6 +6,7 @@ pub use frame_support::{
 	weights::Weight,
 };
 pub use frame_system;
+pub use sp_arithmetic::traits::Bounded;
 pub use sp_io::TestExternalities;
 pub use sp_std::{cell::RefCell, collections::vec_deque::VecDeque, marker::PhantomData};
 
@@ -339,7 +340,7 @@ macro_rules! decl_test_network {
 		}
 
 		fn _process_downward_messages() {
-			use $crate::DmpMessageHandler;
+			use $crate::{DmpMessageHandler, Bounded};
 			use polkadot_parachain::primitives::RelayChainBlockNumber;
 
 			while let Some((to_para_id, messages))
@@ -370,7 +371,7 @@ macro_rules! decl_test_network {
 		}
 
 		fn _process_horizontal_messages() {
-			use $crate::XcmpMessageHandler;
+			use $crate::{XcmpMessageHandler, Bounded};
 
 			while let Some((to_para_id, messages))
 				= $crate::HORIZONTAL_MESSAGES.with(|b| b.borrow_mut().pop_front()) {
@@ -387,7 +388,7 @@ macro_rules! decl_test_network {
 		}
 
 		fn _process_upward_messages() {
-			use $crate::UmpSink;
+			use $crate::{UmpSink, Bounded};
 			while let Some((from_para_id, msg)) = $crate::UPWARD_MESSAGES.with(|b| b.borrow_mut().pop_front()) {
 				let _ =  <$relay_chain>::process_upward_message(
 					from_para_id.into(),
