@@ -14,7 +14,7 @@ decl_test_relay_chain! {
 decl_test_parachain! {
 	pub struct YayoiPumpkin {
 		Runtime = yayoi::Runtime,
-		Origin = yayoi::Origin,
+		RuntimeOrigin = yayoi::RuntimeOrigin,
 		XcmpMessageHandler = yayoi::XcmpQueue,
 		DmpMessageHandler = yayoi::DmpQueue,
 		new_ext = yayoi_ext(1),
@@ -24,7 +24,7 @@ decl_test_parachain! {
 decl_test_parachain! {
 	pub struct YayoiMushroom {
 		Runtime = yayoi::Runtime,
-		Origin = yayoi::Origin,
+		RuntimeOrigin = yayoi::RuntimeOrigin,
 		XcmpMessageHandler = yayoi::XcmpQueue,
 		DmpMessageHandler = yayoi::DmpQueue,
 		new_ext = yayoi_ext(2),
@@ -34,7 +34,7 @@ decl_test_parachain! {
 decl_test_parachain! {
 	pub struct YayoiOctopus {
 		Runtime = yayoi::Runtime,
-		Origin = yayoi::Origin,
+		RuntimeOrigin = yayoi::RuntimeOrigin,
 		XcmpMessageHandler = yayoi::XcmpQueue,
 		DmpMessageHandler = yayoi::DmpQueue,
 		new_ext = yayoi_ext(3),
@@ -160,12 +160,12 @@ mod tests {
 	fn dmp() {
 		Network::reset();
 
-		let remark = yayoi::Call::System(frame_system::Call::<yayoi::Runtime>::remark_with_event {
+		let remark = yayoi::RuntimeCall::System(frame_system::Call::<yayoi::Runtime>::remark_with_event {
 			remark: "Hello from Kusama!".as_bytes().to_vec(),
 		});
 		KusamaNet::execute_with(|| {
 			assert_ok!(kusama_runtime::XcmPallet::force_default_xcm_version(
-				kusama_runtime::Origin::root(),
+				kusama_runtime::RuntimeOrigin::root(),
 				Some(0)
 			));
 			assert_ok!(kusama_runtime::XcmPallet::send_xcm(
@@ -180,12 +180,12 @@ mod tests {
 		});
 
 		YayoiPumpkin::execute_with(|| {
-			use yayoi::{Event, System};
+			use yayoi::{RuntimeEvent, System};
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
 
 			assert!(System::events().iter().any(|r| matches!(
 				r.event,
-				Event::System(frame_system::Event::Remarked { sender: _, hash: _ })
+				RuntimeEvent::System(frame_system::Event::Remarked { sender: _, hash: _ })
 			)));
 		});
 	}
@@ -201,7 +201,7 @@ mod tests {
 			);
 		});
 
-		let remark = kusama_runtime::Call::System(frame_system::Call::<kusama_runtime::Runtime>::remark_with_event {
+		let remark = kusama_runtime::RuntimeCall::System(frame_system::Call::<kusama_runtime::Runtime>::remark_with_event {
 			remark: "Hello from Pumpkin!".as_bytes().to_vec(),
 		});
 		YayoiPumpkin::execute_with(|| {
@@ -217,10 +217,10 @@ mod tests {
 		});
 
 		KusamaNet::execute_with(|| {
-			use kusama_runtime::{Event, System};
+			use kusama_runtime::{RuntimeEvent, System};
 			assert!(System::events().iter().any(|r| matches!(
 				r.event,
-				Event::System(frame_system::Event::Remarked { sender: _, hash: _ })
+				RuntimeEvent::System(frame_system::Event::Remarked { sender: _, hash: _ })
 			)));
 		});
 	}
@@ -229,7 +229,7 @@ mod tests {
 	fn xcmp() {
 		Network::reset();
 
-		let remark = yayoi::Call::System(frame_system::Call::<yayoi::Runtime>::remark_with_event {
+		let remark = yayoi::RuntimeCall::System(frame_system::Call::<yayoi::Runtime>::remark_with_event {
 			remark: "Hello from Pumpkin!".as_bytes().to_vec(),
 		});
 		YayoiPumpkin::execute_with(|| {
@@ -245,27 +245,27 @@ mod tests {
 		});
 
 		YayoiMushroom::execute_with(|| {
-			use yayoi::{Event, System};
+			use yayoi::{RuntimeEvent, System};
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
 
 			assert!(System::events().iter().any(|r| matches!(
 				r.event,
-				Event::System(frame_system::Event::Remarked { sender: _, hash: _ })
+				RuntimeEvent::System(frame_system::Event::Remarked { sender: _, hash: _ })
 			)));
 		});
 	}
 
 	#[test]
 	fn xcmp_through_a_parachain() {
-		use yayoi::{Call, PolkadotXcm, Runtime};
+		use yayoi::{RuntimeCall, PolkadotXcm, Runtime};
 
 		Network::reset();
 
 		// The message goes through: Pumpkin --> Mushroom --> Octopus
-		let remark = Call::System(frame_system::Call::<Runtime>::remark_with_event {
+		let remark = RuntimeCall::System(frame_system::Call::<Runtime>::remark_with_event {
 			remark: "Hello from Pumpkin!".as_bytes().to_vec(),
 		});
-		let send_xcm_to_octopus = Call::PolkadotXcm(pallet_xcm::Call::<Runtime>::send {
+		let send_xcm_to_octopus = RuntimeCall::PolkadotXcm(pallet_xcm::Call::<Runtime>::send {
 			dest: Box::new(VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(3))))),
 			message: Box::new(VersionedXcm::V2(Xcm(vec![Transact {
 				origin_type: OriginKind::SovereignAccount,
@@ -286,22 +286,22 @@ mod tests {
 		});
 
 		YayoiMushroom::execute_with(|| {
-			use yayoi::{Event, System};
+			use yayoi::{RuntimeEvent, System};
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
 
 			assert!(System::events()
 				.iter()
-				.any(|r| matches!(r.event, Event::PolkadotXcm(pallet_xcm::Event::Sent(_, _, _)))));
+				.any(|r| matches!(r.event, RuntimeEvent::PolkadotXcm(pallet_xcm::Event::Sent(_, _, _)))));
 		});
 
 		YayoiOctopus::execute_with(|| {
-			use yayoi::{Event, System};
+			use yayoi::{RuntimeEvent, System};
 			// execution would fail, but good enough to check if the message is received
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
 
 			assert!(System::events()
 				.iter()
-				.any(|r| matches!(r.event, Event::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail { .. }))));
+				.any(|r| matches!(r.event, RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail { .. }))));
 		});
 	}
 
@@ -310,7 +310,7 @@ mod tests {
 		Network::reset();
 		KusamaNet::execute_with(|| {
 			assert_ok!(kusama_runtime::XcmPallet::force_default_xcm_version(
-				kusama_runtime::Origin::root(),
+				kusama_runtime::RuntimeOrigin::root(),
 				Some(0)
 			));
 		});
@@ -336,7 +336,7 @@ mod tests {
 		Network::reset();
 		KusamaNet::execute_with(|| {
 			assert_ok!(kusama_runtime::XcmPallet::force_default_xcm_version(
-				kusama_runtime::Origin::root(),
+				kusama_runtime::RuntimeOrigin::root(),
 				Some(0)
 			));
 		});
@@ -346,7 +346,7 @@ mod tests {
 	}
 
 	fn kusama_send_rmrk(msg: &str, count: u32) {
-		let remark = yayoi::Call::System(frame_system::Call::<yayoi::Runtime>::remark_with_event {
+		let remark = yayoi::RuntimeCall::System(frame_system::Call::<yayoi::Runtime>::remark_with_event {
 			remark: msg.as_bytes().to_vec(),
 		});
 		KusamaNet::execute_with(|| {
@@ -366,20 +366,20 @@ mod tests {
 
 	fn parachain_receive_and_reset_events(received: bool) {
 		YayoiPumpkin::execute_with(|| {
-			use yayoi::{Event, System};
+			use yayoi::{RuntimeEvent, System};
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
 
 			if received {
 				assert!(System::events().iter().any(|r| matches!(
 					r.event,
-					Event::System(frame_system::Event::Remarked { sender: _, hash: _ })
+					RuntimeEvent::System(frame_system::Event::Remarked { sender: _, hash: _ })
 				)));
 
 				System::reset_events();
 			} else {
 				assert!(System::events().iter().all(|r| !matches!(
 					r.event,
-					Event::System(frame_system::Event::Remarked { sender: _, hash: _ })
+					RuntimeEvent::System(frame_system::Event::Remarked { sender: _, hash: _ })
 				)));
 			}
 		});
