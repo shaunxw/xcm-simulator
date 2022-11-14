@@ -201,9 +201,10 @@ mod tests {
 			);
 		});
 
-		let remark = kusama_runtime::RuntimeCall::System(frame_system::Call::<kusama_runtime::Runtime>::remark_with_event {
-			remark: "Hello from Pumpkin!".as_bytes().to_vec(),
-		});
+		let remark =
+			kusama_runtime::RuntimeCall::System(frame_system::Call::<kusama_runtime::Runtime>::remark_with_event {
+				remark: "Hello from Pumpkin!".as_bytes().to_vec(),
+			});
 		YayoiPumpkin::execute_with(|| {
 			assert_ok!(yayoi::PolkadotXcm::send_xcm(
 				Here,
@@ -257,7 +258,7 @@ mod tests {
 
 	#[test]
 	fn xcmp_through_a_parachain() {
-		use yayoi::{RuntimeCall, PolkadotXcm, Runtime};
+		use yayoi::{PolkadotXcm, Runtime, RuntimeCall};
 
 		Network::reset();
 
@@ -299,9 +300,10 @@ mod tests {
 			// execution would fail, but good enough to check if the message is received
 			System::events().iter().for_each(|r| println!(">>> {:?}", r.event));
 
-			assert!(System::events()
-				.iter()
-				.any(|r| matches!(r.event, RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail { .. }))));
+			assert!(System::events().iter().any(|r| matches!(
+				r.event,
+				RuntimeEvent::XcmpQueue(cumulus_pallet_xcmp_queue::Event::Fail { .. })
+			)));
 		});
 	}
 
