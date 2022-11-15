@@ -71,7 +71,7 @@ macro_rules! decl_test_parachain {
 	(
 		pub struct $name:ident {
 			Runtime = $runtime:path,
-			Origin = $origin:path,
+			RuntimeOrigin = $origin:path,
 			XcmpMessageHandler = $xcmp_message_handler:path,
 			DmpMessageHandler = $dmp_message_handler:path,
 			new_ext = $new_ext:expr,
