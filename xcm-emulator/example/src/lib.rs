@@ -239,7 +239,7 @@ mod tests {
 				MultiLocation::new(1, X1(Parachain(2))),
 				Xcm(vec![Transact {
 					origin_type: OriginKind::SovereignAccount,
-					require_weight_at_most: 10_000_000,
+					require_weight_at_most: 20_000_000,
 					call: remark.encode().into(),
 				}]),
 			));
