@@ -153,7 +153,7 @@ mod tests {
 	use cumulus_primitives_core::ParaId;
 	use frame_support::{assert_ok, traits::Currency};
 	use sp_runtime::traits::AccountIdConversion;
-	use xcm::{latest::prelude::*, VersionedMultiLocation, VersionedXcm};
+	use xcm::{v3::prelude::*, VersionedMultiLocation, VersionedXcm};
 	use xcm_emulator::TestExt;
 
 	#[test]
@@ -166,14 +166,14 @@ mod tests {
 		KusamaNet::execute_with(|| {
 			assert_ok!(kusama_runtime::XcmPallet::force_default_xcm_version(
 				kusama_runtime::RuntimeOrigin::root(),
-				Some(0)
+				Some(2)
 			));
 			assert_ok!(kusama_runtime::XcmPallet::send_xcm(
 				Here,
 				Parachain(1),
 				Xcm(vec![Transact {
-					origin_type: OriginKind::SovereignAccount,
-					require_weight_at_most: INITIAL_BALANCE as u64,
+					origin_kind: OriginKind::SovereignAccount,
+					require_weight_at_most: Weight::from_parts(INITIAL_BALANCE as u64, 1024 * 1024),
 					call: remark.encode().into(),
 				}]),
 			));
@@ -206,12 +206,16 @@ mod tests {
 				remark: "Hello from Pumpkin!".as_bytes().to_vec(),
 			});
 		YayoiPumpkin::execute_with(|| {
+			assert_ok!(yayoi::PolkadotXcm::force_default_xcm_version(
+				yayoi::RuntimeOrigin::root(),
+				Some(2)
+			));
 			assert_ok!(yayoi::PolkadotXcm::send_xcm(
 				Here,
 				Parent,
 				Xcm(vec![Transact {
-					origin_type: OriginKind::SovereignAccount,
-					require_weight_at_most: INITIAL_BALANCE as u64,
+					origin_kind: OriginKind::SovereignAccount,
+					require_weight_at_most: Weight::from_parts(INITIAL_BALANCE as u64, 1024 * 1024),
 					call: remark.encode().into(),
 				}]),
 			));
@@ -238,8 +242,8 @@ mod tests {
 				Here,
 				MultiLocation::new(1, X1(Parachain(2))),
 				Xcm(vec![Transact {
-					origin_type: OriginKind::SovereignAccount,
-					require_weight_at_most: 20_000_000,
+					origin_kind: OriginKind::SovereignAccount,
+					require_weight_at_most: 20_000_000.into(),
 					call: remark.encode().into(),
 				}]),
 			));
@@ -267,10 +271,10 @@ mod tests {
 			remark: "Hello from Pumpkin!".as_bytes().to_vec(),
 		});
 		let send_xcm_to_octopus = RuntimeCall::PolkadotXcm(pallet_xcm::Call::<Runtime>::send {
-			dest: Box::new(VersionedMultiLocation::V1(MultiLocation::new(1, X1(Parachain(3))))),
-			message: Box::new(VersionedXcm::V2(Xcm(vec![Transact {
-				origin_type: OriginKind::SovereignAccount,
-				require_weight_at_most: 10_000_000,
+			dest: Box::new(VersionedMultiLocation::V3(MultiLocation::new(1, X1(Parachain(3))))),
+			message: Box::new(VersionedXcm::V3(Xcm(vec![Transact {
+				origin_kind: OriginKind::SovereignAccount,
+				require_weight_at_most: 10_000_000.into(),
 				call: remark.encode().into(),
 			}]))),
 		});
@@ -279,8 +283,10 @@ mod tests {
 				Here,
 				MultiLocation::new(1, X1(Parachain(2))),
 				Xcm(vec![Transact {
-					origin_type: OriginKind::SovereignAccount,
-					require_weight_at_most: 100_000_000,
+					origin_kind: OriginKind::SovereignAccount,
+					// TODO: fix in 0.9.40, https://github.com/paritytech/polkadot/pull/6787
+					// require_weight_at_most: 100_000_000.into(),
+					require_weight_at_most: 200_000_000.into(),
 					call: send_xcm_to_octopus.encode().into(),
 				}]),
 			));
@@ -313,7 +319,7 @@ mod tests {
 		KusamaNet::execute_with(|| {
 			assert_ok!(kusama_runtime::XcmPallet::force_default_xcm_version(
 				kusama_runtime::RuntimeOrigin::root(),
-				Some(0)
+				Some(2)
 			));
 		});
 
@@ -339,7 +345,7 @@ mod tests {
 		KusamaNet::execute_with(|| {
 			assert_ok!(kusama_runtime::XcmPallet::force_default_xcm_version(
 				kusama_runtime::RuntimeOrigin::root(),
-				Some(0)
+				Some(2)
 			));
 		});
 
@@ -357,8 +363,8 @@ mod tests {
 					Here,
 					Parachain(1),
 					Xcm(vec![Transact {
-						origin_type: OriginKind::SovereignAccount,
-						require_weight_at_most: INITIAL_BALANCE as u64,
+						origin_kind: OriginKind::SovereignAccount,
+						require_weight_at_most: Weight::from_parts(INITIAL_BALANCE as u64, 1024 * 1024),
 						call: remark.encode().into(),
 					}]),
 				));
