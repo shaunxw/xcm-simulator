@@ -233,9 +233,17 @@ mod tests {
 
 		KusamaNet::execute_with(|| {
 			use kusama_runtime::{RuntimeEvent, System};
+			// TODO: https://github.com/paritytech/polkadot/pull/6824
+			// assert!(System::events().iter().any(|r| matches!(
+			// 	r.event,
+			// 	RuntimeEvent::System(frame_system::Event::Remarked { sender: _, hash: _ })
+			// )));
 			assert!(System::events().iter().any(|r| matches!(
 				r.event,
-				RuntimeEvent::System(frame_system::Event::Remarked { sender: _, hash: _ })
+				RuntimeEvent::Ump(polkadot_runtime_parachains::ump::Event::ExecutedUpward(
+					_,
+					Outcome::Incomplete(_, XcmError::NoPermission)
+				))
 			)));
 		});
 	}
