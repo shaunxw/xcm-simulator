@@ -166,7 +166,7 @@ mod tests {
 		KusamaNet::execute_with(|| {
 			assert_ok!(kusama_runtime::XcmPallet::force_default_xcm_version(
 				kusama_runtime::RuntimeOrigin::root(),
-				Some(2)
+				Some(3)
 			));
 			assert_ok!(kusama_runtime::XcmPallet::send_xcm(
 				Here,
@@ -195,6 +195,10 @@ mod tests {
 		Network::reset();
 
 		KusamaNet::execute_with(|| {
+			assert_ok!(kusama_runtime::XcmPallet::force_default_xcm_version(
+				kusama_runtime::RuntimeOrigin::root(),
+				Some(3)
+			));
 			let _ = kusama_runtime::Balances::deposit_creating(
 				&ParaId::from(1).into_account_truncating(),
 				1_000_000_000_000,
@@ -208,16 +212,22 @@ mod tests {
 		YayoiPumpkin::execute_with(|| {
 			assert_ok!(yayoi::PolkadotXcm::force_default_xcm_version(
 				yayoi::RuntimeOrigin::root(),
-				Some(2)
+				Some(3)
 			));
 			assert_ok!(yayoi::PolkadotXcm::send_xcm(
 				Here,
 				Parent,
-				Xcm(vec![Transact {
-					origin_kind: OriginKind::SovereignAccount,
-					require_weight_at_most: Weight::from_parts(INITIAL_BALANCE as u64, 1024 * 1024),
-					call: remark.encode().into(),
-				}]),
+				Xcm(vec![
+					UnpaidExecution {
+						weight_limit: Unlimited,
+						check_origin: None,
+					},
+					Transact {
+						origin_kind: OriginKind::SovereignAccount,
+						require_weight_at_most: Weight::from_parts(INITIAL_BALANCE as u64, 1024 * 1024),
+						call: remark.encode().into(),
+					}
+				]),
 			));
 		});
 
@@ -319,7 +329,7 @@ mod tests {
 		KusamaNet::execute_with(|| {
 			assert_ok!(kusama_runtime::XcmPallet::force_default_xcm_version(
 				kusama_runtime::RuntimeOrigin::root(),
-				Some(2)
+				Some(3)
 			));
 		});
 
@@ -345,7 +355,7 @@ mod tests {
 		KusamaNet::execute_with(|| {
 			assert_ok!(kusama_runtime::XcmPallet::force_default_xcm_version(
 				kusama_runtime::RuntimeOrigin::root(),
-				Some(2)
+				Some(3)
 			));
 		});
 
