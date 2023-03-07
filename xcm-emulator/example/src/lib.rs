@@ -151,7 +151,7 @@ mod tests {
 	use codec::Encode;
 
 	use cumulus_primitives_core::ParaId;
-	use frame_support::{assert_ok, traits::Currency};
+	use frame_support::{assert_ok, dispatch::GetDispatchInfo, traits::Currency};
 	use sp_runtime::traits::AccountIdConversion;
 	use xcm::{v3::prelude::*, VersionedMultiLocation, VersionedXcm};
 	use xcm_emulator::TestExt;
@@ -296,15 +296,17 @@ mod tests {
 				call: remark.encode().into(),
 			}]))),
 		});
+		assert_eq!(
+			send_xcm_to_octopus.get_dispatch_info().weight,
+			Weight::from_parts(110000010, 10000010)
+		);
 		YayoiPumpkin::execute_with(|| {
 			assert_ok!(PolkadotXcm::send_xcm(
 				Here,
 				MultiLocation::new(1, X1(Parachain(2))),
 				Xcm(vec![Transact {
 					origin_kind: OriginKind::SovereignAccount,
-					// TODO: fix in 0.9.40, https://github.com/paritytech/polkadot/pull/6787
-					// require_weight_at_most: 100_000_000.into(),
-					require_weight_at_most: 200_000_000.into(),
+					require_weight_at_most: 110_000_010.into(),
 					call: send_xcm_to_octopus.encode().into(),
 				}]),
 			));
