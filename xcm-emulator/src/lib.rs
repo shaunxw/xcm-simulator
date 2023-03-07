@@ -26,7 +26,7 @@ pub use polkadot_runtime_parachains::{
 	dmp,
 	ump::{MessageId, UmpSink, XcmSink},
 };
-pub use xcm::{latest::prelude::*, VersionedXcm};
+pub use xcm::{v3::prelude::*, VersionedXcm};
 pub use xcm_executor::XcmExecutor;
 
 pub trait TestExt {
@@ -419,7 +419,7 @@ macro_rules! decl_test_network {
 			para_id: u32,
 			relay_parent_number: u32,
 		) -> $crate::ParachainInherentData {
-			use $crate::cumulus_primitives_core::{relay_chain::v2::HrmpChannelId, AbridgedHrmpChannel};
+			use $crate::cumulus_primitives_core::{relay_chain::HrmpChannelId, AbridgedHrmpChannel};
 
 			let mut sproof = $crate::RelayStateSproofBuilder::default();
 			sproof.para_id = para_id.into();
