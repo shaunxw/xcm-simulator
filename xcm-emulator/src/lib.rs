@@ -358,10 +358,10 @@ macro_rules! decl_test_network {
 								!$crate::DMP_DONE.with(|b| b.borrow_mut().contains(&(to_para_id, m.0, m.1.clone())))
 							}).collect::<Vec<(RelayChainBlockNumber, Vec<u8>)>>();
 							if msgs.len() != 0 {
-								<$parachain>::handle_dmp_messages(msgs.clone().into_iter(), $crate::Weight::max_value());
-								for m in msgs {
+								for m in msgs.clone() {
 									$crate::DMP_DONE.with(|b| b.borrow_mut().push_back((to_para_id, m.0, m.1)));
 								}
+								<$parachain>::handle_dmp_messages(msgs.into_iter(), $crate::Weight::max_value());
 							}
 						},
 					)*
