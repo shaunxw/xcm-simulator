@@ -81,8 +81,8 @@ pub fn yayoi_ext(para_id: u32) -> sp_io::TestExternalities {
 }
 
 fn default_parachains_host_configuration(
-) -> polkadot_runtime_parachains::configuration::HostConfiguration<polkadot_primitives::v2::BlockNumber> {
-	use polkadot_primitives::v2::{MAX_CODE_SIZE, MAX_POV_SIZE};
+) -> polkadot_runtime_parachains::configuration::HostConfiguration<polkadot_primitives::v4::BlockNumber> {
+	use polkadot_primitives::v4::{MAX_CODE_SIZE, MAX_POV_SIZE};
 
 	polkadot_runtime_parachains::configuration::HostConfiguration {
 		minimum_validation_upgrade_delay: 5,
